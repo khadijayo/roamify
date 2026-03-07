@@ -1,206 +1,242 @@
 package models
 
-import "time"
+import (
+	"time"
 
+	"github.com/google/uuid"
+)
 
 type User struct {
-	ID        uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-	Name      string    `json:"name" gorm:"not null"`
-	Email     string    `json:"email" gorm:"uniqueIndex;not null"`
-	Password  string    `json:"-" gorm:"not null"`
-	Role      UserRole  `json:"role" gorm:"type:varchar(20);default:'user'"`
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+
+	FullName     string     `gorm:"not null" json:"full_name"`
+	Email        string     `gorm:"not null;unique" json:"email"`
+	PasswordHash string     `gorm:"not null" json:"-"`
+	AvatarURL    string     `json:"avatar_url"`
+	IsActive     bool       `gorm:"default:true" json:"is_active"`
+	LastLoginAt  *time.Time `json:"last_login_at"`
+
+	Reviews   []Review   `gorm:"foreignKey:UserID" json:"reviews,omitempty"`
+	Bookmarks []Bookmark `gorm:"foreignKey:UserID" json:"bookmarks,omitempty"`
 }
 
-type UserRole string
+type DestinationType string
 
 const (
-	RoleAdmin  UserRole = "admin"
-	RoleUser   UserRole = "user"
-	RoleAgency UserRole = "agency"
+	TypeResort      DestinationType = "resort"
+	TypeDesert      DestinationType = "desert"
+	TypeMountain    DestinationType = "mountain"
+	TypeCulturalSite DestinationType = "cultural_site"
+	TypeBeach       DestinationType = "beach"
+	TypeMuseum      DestinationType = "museum"
+	TypeHistorical  DestinationType = "historical"
+)
+
+type PlaceCategory string
+
+const (
+	CategoryDestination PlaceCategory = "destination" // natural/cultural spots
+	CategoryHotel       PlaceCategory = "hotel"
+	CategoryRestaurant  PlaceCategory = "restaurant"
+	CategoryTravelAgency PlaceCategory = "travel_agency"
+)
+
+type Season string
+
+const (
+	SeasonSpring Season = "spring"
+	SeasonSummer Season = "summer"
+	SeasonAutumn Season = "autumn"
+	SeasonWinter Season = "winter"
+)
+
+type ActivityType string
+
+const (
+	ActivityHiking       ActivityType = "hiking"
+	ActivitySwimming     ActivityType = "swimming"
+	ActivityCamping      ActivityType = "camping"
+	ActivityFoodExperience ActivityType = "food_experience"
+	ActivityAdventure    ActivityType = "adventure"
+	ActivityRelaxation   ActivityType = "relaxation"
+	ActivityCultural     ActivityType = "cultural"
+	ActivityShopping     ActivityType = "shopping"
 )
 
 
 
-type City struct {
-	ID          uint   `json:"id" gorm:"primaryKey;autoIncrement"`
-	Name        string `json:"name" gorm:"not null"`
-	Wilaya      string `json:"wilaya" gorm:"not null"`
-	Description string `json:"description"`
-	CoverImage  string `json:"cover_image"`
+type Wilaya struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+
+	Name      string  `gorm:"not null;unique" json:"name"`        
+	ArabicName string `gorm:"not null" json:"arabic_name"`        
+	Code      int     `gorm:"not null;unique" json:"code"`        
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+	CoverImage string `json:"cover_image"`
+
+	Places []Place `gorm:"foreignKey:WilayaID" json:"places,omitempty"`
 }
 
-
-
-type Category struct {
-	ID   uint   `json:"id" gorm:"primaryKey;autoIncrement"`
-	Name string `json:"name" gorm:"uniqueIndex;not null"`
-}
-
-
+// Place is the unified model for destinations, hotels, restaurants, agencies
+// The `category` field drives which sub-model applies
 type Place struct {
-	ID          uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-	Name        string    `json:"name" gorm:"not null"`
-	Description string    `json:"description"`
-	CityID      uint      `json:"city_id" gorm:"not null"`
-	CategoryID  uint      `json:"category_id" gorm:"not null"`
-	Address     string    `json:"address"`
-	Latitude    float64   `json:"latitude"`
-	Longitude   float64   `json:"longitude"`
-	PriceRange  string    `json:"price_range" gorm:"type:varchar(50)"`
-	Phone       string    `json:"phone" gorm:"type:varchar(20)"`
-	Website     string    `json:"website"`
-	CreatedBy   uint      `json:"created_by" gorm:"not null"`
-	IsVerified  bool      `json:"is_verified" gorm:"default:false"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 
-	// Associations
-	City     City         `json:"city,omitempty" gorm:"foreignKey:CityID"`
-	Category Category     `json:"category,omitempty" gorm:"foreignKey:CategoryID"`
-	Images   []PlaceImage `json:"images,omitempty" gorm:"foreignKey:PlaceID"`
-	Reviews  []Review     `json:"reviews,omitempty" gorm:"foreignKey:PlaceID"`
+	Name        string        `gorm:"not null" json:"name"`
+	Slug        string        `gorm:"not null;unique" json:"slug"`
+	Category    PlaceCategory `gorm:"not null;index" json:"category"`
+	Description string        `gorm:"type:text" json:"description"`
+
+	WilayaID  uint    `gorm:"not null;index" json:"wilaya_id"`
+	Wilaya    Wilaya  `gorm:"foreignKey:WilayaID" json:"wilaya,omitempty"`
+	Address   string  `json:"address"`
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+	MapsURL   string  `json:"maps_url"` 
+
+	IsOpen    *bool  `json:"is_open"`    
+	IsFeatured bool  `gorm:"default:false" json:"is_featured"`
+	IsActive   bool  `gorm:"default:true" json:"is_active"`
+
+	AverageRating float32 `gorm:"default:0" json:"average_rating"` 
+	ReviewCount   int     `gorm:"default:0" json:"review_count"`
+
+	Images      []PlaceImage  `gorm:"foreignKey:PlaceID" json:"images,omitempty"`
+	Reviews     []Review      `gorm:"foreignKey:PlaceID" json:"reviews,omitempty"`
+	Activities  []PlaceActivity `gorm:"foreignKey:PlaceID" json:"activities,omitempty"`
+	BestSeasons []PlaceSeason `gorm:"foreignKey:PlaceID" json:"best_seasons,omitempty"`
+
+	DestinationDetail *DestinationDetail `gorm:"foreignKey:PlaceID" json:"destination_detail,omitempty"`
+	HotelDetail       *HotelDetail       `gorm:"foreignKey:PlaceID" json:"hotel_detail,omitempty"`
+	RestaurantDetail  *RestaurantDetail  `gorm:"foreignKey:PlaceID" json:"restaurant_detail,omitempty"`
+	AgencyDetail      *AgencyDetail      `gorm:"foreignKey:PlaceID" json:"agency_detail,omitempty"`
+}
+
+type DestinationDetail struct {
+	ID      uint      `gorm:"primaryKey" json:"id"`
+	PlaceID uuid.UUID `gorm:"type:uuid;not null;unique" json:"place_id"`
+
+	Type          DestinationType `gorm:"not null" json:"type"` // beach, mountain, etc.
+	EntryFee      float64         `json:"entry_fee"`            
+	Currency      string          `gorm:"default:'DZD'" json:"currency"`
+	VisitDuration string          `json:"visit_duration"`      
+	Accessibility string          `json:"accessibility"`       
+	TipsText      string          `gorm:"type:text" json:"tips_text"`
+}
+
+
+type HotelDetail struct {
+	ID      uint      `gorm:"primaryKey" json:"id"`
+	PlaceID uuid.UUID `gorm:"type:uuid;not null;unique" json:"place_id"`
+
+	StarRating    int     `json:"star_rating"`    
+	PricePerNight float64 `json:"price_per_night"`
+	Currency      string  `gorm:"default:'DZD'" json:"currency"`
+	PhoneNumber   string  `json:"phone_number"`
+	Email         string  `json:"email"`
+	Website       string  `json:"website"`
+	CheckIn       string  `json:"check_in"`  
+	CheckOut      string  `json:"check_out"` 
+	HasPool       bool    `json:"has_pool"`
+	HasWifi       bool    `json:"has_wifi"`
+	HasParking    bool    `json:"has_parking"`
+	HasRestaurant bool    `json:"has_restaurant"`
+}
+
+type RestaurantDetail struct {
+	ID      uint      `gorm:"primaryKey" json:"id"`
+	PlaceID uuid.UUID `gorm:"type:uuid;not null;unique" json:"place_id"`
+
+	Cuisine       string  `json:"cuisine"`          
+	PriceRange    string  `json:"price_range"`      
+	PhoneNumber   string  `json:"phone_number"`
+	OpeningHours  string  `json:"opening_hours"`   
+	HasDelivery   bool    `json:"has_delivery"`
+	HasTakeaway   bool    `json:"has_takeaway"`
+	Halal         bool    `gorm:"default:true" json:"halal"`
+}
+
+
+type AgencyDetail struct {
+	ID      uint      `gorm:"primaryKey" json:"id"`
+	PlaceID uuid.UUID `gorm:"type:uuid;not null;unique" json:"place_id"`
+
+	LicenseNumber string `json:"license_number"`
+	PhoneNumber   string `json:"phone_number"`
+	Email         string `json:"email"`
+	Website       string `json:"website"`
+	OpeningHours  string `json:"opening_hours"`
+	ServicesOffered string `gorm:"type:text" json:"services_offered"` // comma-separated or JSON
 }
 
 type PlaceImage struct {
-	ID       uint   `json:"id" gorm:"primaryKey;autoIncrement"`
-	PlaceID  uint   `json:"place_id" gorm:"not null;index"`
-	ImageURL string `json:"image_url" gorm:"not null"`
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	PlaceID   uuid.UUID `gorm:"type:uuid;not null;index" json:"place_id"`
+	URL       string    `gorm:"not null" json:"url"`
+	AltText   string    `json:"alt_text"`
+	IsCover   bool      `gorm:"default:false" json:"is_cover"` // main card image
+	SortOrder int       `gorm:"default:0" json:"sort_order"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
+
+type PlaceActivity struct {
+	ID       uint         `gorm:"primaryKey" json:"id"`
+	PlaceID  uuid.UUID    `gorm:"type:uuid;not null;index" json:"place_id"`
+	Activity ActivityType `gorm:"not null" json:"activity"`
+}
+
+
+type PlaceSeason struct {
+	ID      uint      `gorm:"primaryKey" json:"id"`
+	PlaceID uuid.UUID `gorm:"type:uuid;not null;index" json:"place_id"`
+	Season  Season    `gorm:"not null" json:"season"`
+}
 
 
 type Review struct {
-	ID        uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-	UserID    uint      `json:"user_id" gorm:"not null;index"`
-	PlaceID   uint      `json:"place_id" gorm:"not null;index"`
-	Rating    int       `json:"rating" gorm:"check:rating >= 1 AND rating <= 5"`
-	Comment   string    `json:"comment"`
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+
+	PlaceID uuid.UUID `gorm:"type:uuid;not null;index" json:"place_id"`
+	UserID  uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	User    User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
+
+	Rating  int    `gorm:"not null;check:rating >= 1 AND rating <= 5" json:"rating"`
+	Title   string `json:"title"`
+	Body    string `gorm:"type:text" json:"body"`
+	IsVisible bool `gorm:"default:true" json:"is_visible"`
+}
+
+
+type Bookmark struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 
-	User User `json:"user,omitempty" gorm:"foreignKey:UserID"`
-}
-
-type Favorite struct {
-	ID      uint `json:"id" gorm:"primaryKey;autoIncrement"`
-	UserID  uint `json:"user_id" gorm:"not null;uniqueIndex:idx_user_place"`
-	PlaceID uint `json:"place_id" gorm:"not null;uniqueIndex:idx_user_place"`
-
-	Place Place `json:"place,omitempty" gorm:"foreignKey:PlaceID"`
+	UserID  uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	PlaceID uuid.UUID `gorm:"type:uuid;not null;index" json:"place_id"`
+	Place   Place     `gorm:"foreignKey:PlaceID" json:"place,omitempty"`
 }
 
 
-type Trip struct {
-	ID        uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-	UserID    uint      `json:"user_id" gorm:"not null;index"`
-	Name      string    `json:"name" gorm:"not null"`
-	StartDate time.Time `json:"start_date"`
-	EndDate   time.Time `json:"end_date"`
-
-	Places []TripPlace `json:"places,omitempty" gorm:"foreignKey:TripID"`
-}
-
-type TripPlace struct {
-	ID        uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-	TripID    uint      `json:"trip_id" gorm:"not null;index"`
-	PlaceID   uint      `json:"place_id" gorm:"not null"`
-	VisitDate time.Time `json:"visit_date"`
-
-	Place Place `json:"place,omitempty" gorm:"foreignKey:PlaceID"`
-}
-
-
-type SavedTrip struct {
-	ID      uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-	UserID  uint      `json:"user_id" gorm:"not null;uniqueIndex:idx_saved_trip"`
-	TripID  uint      `json:"trip_id" gorm:"not null;uniqueIndex:idx_saved_trip"`
-	SavedAt time.Time `json:"saved_at" gorm:"autoCreateTime"`
-
-	Trip Trip `json:"trip,omitempty" gorm:"foreignKey:TripID"`
-}
-
-
-
-type Agency struct {
-	ID          uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-	UserID      uint      `json:"user_id" gorm:"uniqueIndex;not null"`
-	Name        string    `json:"name" gorm:"not null"`
-	Description string    `json:"description"`
-	Address     string    `json:"address"`
-	CityID      uint      `json:"city_id" gorm:"not null"`
-	Phone       string    `json:"phone" gorm:"type:varchar(20)"`
-	IsVerified  bool      `json:"is_verified" gorm:"default:false"`
-
-	City     City            `json:"city,omitempty" gorm:"foreignKey:CityID"`
-	Packages []AgencyPackage `json:"packages,omitempty" gorm:"foreignKey:AgencyID"`
-}
-
-type AgencyPackage struct {
-	ID          uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-	AgencyID    uint      `json:"agency_id" gorm:"not null;index"`
-	Name        string    `json:"name" gorm:"not null"`
-	Description string    `json:"description"`
-	Price       float64   `json:"price"`
-	Duration    int       `json:"duration"`
-	MaxPeople   int       `json:"max_people"`
-	StartDate   time.Time `json:"start_date"`
-	EndDate     time.Time `json:"end_date"`
-	IsAvailable bool      `json:"is_available" gorm:"default:true"`
-	CreatedAt   time.Time `json:"created_at"`
-
-	Agency Agency       `json:"agency,omitempty" gorm:"foreignKey:AgencyID"`
-	
-}
-
-
-
-type TravelGroup struct {
-	ID          uint              `json:"id" gorm:"primaryKey;autoIncrement"`
-	Name        string            `json:"name" gorm:"not null"`
-	Description string            `json:"description"`
-	CoverImage  string            `json:"cover_image"`
-	CityID      *uint             `json:"city_id"`
-	TripID      *uint             `json:"trip_id"`
-	CreatedBy   uint              `json:"created_by" gorm:"not null"`
-	MaxMembers  int               `json:"max_members" gorm:"default:0"`
-	Status      TravelGroupStatus `json:"status" gorm:"type:varchar(20);default:'open'"`
-	CreatedAt   time.Time         `json:"created_at"`
-
-	Members  []GroupMember  `json:"members,omitempty" gorm:"foreignKey:GroupID"`
-	Messages []GroupMessage `json:"messages,omitempty" gorm:"foreignKey:GroupID"`
-	City     *City          `json:"city,omitempty" gorm:"foreignKey:CityID"`
-}
-
-type TravelGroupStatus string
-
-const (
-	GroupStatusOpen   TravelGroupStatus = "open"
-	GroupStatusClosed TravelGroupStatus = "closed"
-	GroupStatusFull   TravelGroupStatus = "full"
-)
-
-type GroupMember struct {
-	ID       uint            `json:"id" gorm:"primaryKey;autoIncrement"`
-	GroupID  uint            `json:"group_id" gorm:"not null;uniqueIndex:idx_group_user"`
-	UserID   uint            `json:"user_id" gorm:"not null;uniqueIndex:idx_group_user"`
-	Role     GroupMemberRole `json:"role" gorm:"type:varchar(20);default:'member'"`
-	JoinedAt time.Time       `json:"joined_at" gorm:"autoCreateTime"`
-
-	User User `json:"user,omitempty" gorm:"foreignKey:UserID"`
-}
-
-type GroupMemberRole string
-
-const (
-	GroupRoleAdmin  GroupMemberRole = "admin"
-	GroupRoleMember GroupMemberRole = "member"
-)
-
-type GroupMessage struct {
-	ID        uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-	GroupID   uint      `json:"group_id" gorm:"not null;index"`
-	UserID    uint      `json:"user_id" gorm:"not null"`
-	Content   string    `json:"content" gorm:"not null"`
+type TravelTip struct {
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 
-	User User `json:"user,omitempty" gorm:"foreignKey:UserID"`
+	Title     string    `gorm:"not null" json:"title"`
+	Slug      string    `gorm:"not null;unique" json:"slug"`
+	Body      string    `gorm:"type:text;not null" json:"body"`
+	CoverImage string   `json:"cover_image"`
+	WilayaID  *uint     `json:"wilaya_id"` 
+	IsPublished bool    `gorm:"default:false" json:"is_published"`
+	AuthorID  uuid.UUID `gorm:"type:uuid" json:"author_id"`
 }
