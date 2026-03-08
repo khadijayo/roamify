@@ -16,26 +16,21 @@ import (
 )
 
 func main() {
-	// 1. Load .env
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, reading from environment")
 	}
 
-	// 2. Load & validate config (crashes early if a required var is missing)
+	//crashes early if a required var is missing
 	cfg := config.Load()
 
-	// 3. Connect DB
 	db := connectDB(cfg)
 
-	// 4. Migrate
 	migrate(db)
 
-	// 5. Seed (dev only)
 	if cfg.Env != "production" {
 		seed.Run(db)
 	}
 
-	// 6. Start server
 	r := router.Setup(db, cfg)
 	log.Printf("🚀 Roamify API running on http://localhost:%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

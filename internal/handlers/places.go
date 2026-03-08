@@ -19,7 +19,6 @@ func NewPlaceHandler(db *gorm.DB) *PlaceHandler {
 }
 
 // GET /api/v1/places
-// Supports: ?category ?wilaya_id ?rating ?activity ?season ?type ?q ?page ?limit
 func (h *PlaceHandler) List(c *gin.Context) {
 	var places []models.Place
 
@@ -126,7 +125,7 @@ func (h *PlaceHandler) GetBySlug(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": place})
 }
 
-// ── Pagination helper ─────────────────────────────────────────
+// ── Pagination helper ──
 
 func getPagination(c *gin.Context) (int, int) {
 	page, limit := 1, 12

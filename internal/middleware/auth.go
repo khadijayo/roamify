@@ -44,7 +44,7 @@ func AuthRequired(cfg *config.Config) gin.HandlerFunc {
 	}
 }
 
-// GetUserID extracts the userID from gin context (use inside protected handlers)
+// GetUserID extracts the userID from gin context 
 func GetUserID(c *gin.Context) (uuid.UUID, bool) {
 	val, exists := c.Get("userID")
 	if !exists {

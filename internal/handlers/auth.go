@@ -24,7 +24,7 @@ func NewAuthHandler(db *gorm.DB, cfg *config.Config) *AuthHandler {
 	return &AuthHandler{DB: db, Cfg: cfg}
 }
 
-// ── Request bodies ────────────────────────────────────────────
+//Request bodies
 
 type RegisterRequest struct {
 	FullName string `json:"full_name" binding:"required,min=2"`
@@ -37,7 +37,7 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// ── Handlers ─────────────────────────────────────────────────
+// ── Handlers ──
 
 // POST /api/v1/auth/register
 func (h *AuthHandler) Register(c *gin.Context) {
@@ -47,14 +47,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Check email not already taken
 	var existing models.User
 	if err := h.DB.Where("email = ?", req.Email).First(&existing).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "email already registered"})
 		return
 	}
 
-	// Hash password using BcryptCost from config
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), h.Cfg.BcryptCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process password"})
@@ -134,7 +132,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})
 }
 
-// ── Helper ────────────────────────────────────────────────────
+// ── Helper ──
 
 func (h *AuthHandler) generateToken(user models.User) (string, error) {
 	expiry := time.Duration(h.Cfg.JWTExpiryHours) * time.Hour
