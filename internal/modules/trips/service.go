@@ -1,0 +1,425 @@
+package trips
+
+import (
+	"errors"
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+type Service interface {
+	// Trips
+	CreateTrip(ownerID uuid.UUID, req *CreateTripRequest) (*Trip, error)
+	GetTrip(tripID, requesterID uuid.UUID) (*Trip, error)
+	GetMyTrips(userID uuid.UUID) ([]Trip, error)
+	UpdateTrip(tripID, requesterID uuid.UUID, req *UpdateTripRequest) (*Trip, error)
+	DeleteTrip(tripID, requesterID uuid.UUID) error
+
+	// Members
+	InviteMember(tripID, requesterID uuid.UUID, req *InviteMemberRequest) (*TripMember, error)
+	UpdateMemberStatus(tripID, userID uuid.UUID, req *UpdateMemberStatusRequest) (*TripMember, error)
+	RemoveMember(tripID, requesterID, targetUserID uuid.UUID) error
+	GetMembers(tripID uuid.UUID) ([]TripMember, error)
+
+	// Itinerary
+	AddItineraryItem(tripID, userID uuid.UUID, req *CreateItineraryItemRequest) (*TripItineraryItem, error)
+	GetItinerary(tripID uuid.UUID) ([]TripItineraryItem, error)
+	UpdateItineraryItem(itemID, requesterID uuid.UUID, req *UpdateItineraryItemRequest) (*TripItineraryItem, error)
+	DeleteItineraryItem(itemID, requesterID uuid.UUID) error
+
+	// Expenses
+	AddExpense(tripID, userID uuid.UUID, req *CreateExpenseRequest) (*TripExpense, error)
+	GetExpenses(tripID uuid.UUID) ([]TripExpense, error)
+	UpdateExpense(expenseID, requesterID uuid.UUID, req *UpdateExpenseRequest) (*TripExpense, error)
+	DeleteExpense(expenseID, requesterID uuid.UUID) error
+}
+
+type service struct {
+	repo Repository
+}
+
+func NewService(repo Repository) Service {
+	return &service{repo: repo}
+}
+
+// ---- helpers ----
+
+func (s *service) isMember(tripID, userID uuid.UUID) bool {
+	m, err := s.repo.FindMember(tripID, userID)
+	return err == nil && (m.JoinStatus == JoinStatusJoined)
+}
+
+func (s *service) isOwnerOrAdmin(tripID, userID uuid.UUID) bool {
+	m, err := s.repo.FindMember(tripID, userID)
+	if err != nil {
+		return false
+	}
+	return m.Role == RoleOwner || m.Role == RoleAdmin
+}
+
+// ---- Trips ----
+
+func (s *service) CreateTrip(ownerID uuid.UUID, req *CreateTripRequest) (*Trip, error) {
+	travelers := req.TravelersPlanned
+	if travelers < 1 {
+		travelers = 1
+	}
+	trip := &Trip{
+		OwnerUserID:      ownerID,
+		Title:            req.Title,
+		Destination:      req.Destination,
+		TripType:         req.TripType,
+		VibeTags:         req.VibeTags,
+		TravelersPlanned: travelers,
+		StartDate:        req.StartDate,
+		EndDate:          req.EndDate,
+		Budget:           req.Budget,
+		CoverImageURL:    req.CoverImageURL,
+		Notes:            req.Notes,
+		Status:           TripStatusPlanning,
+	}
+	if err := s.repo.CreateTrip(trip); err != nil {
+		return nil, err
+	}
+	// Auto-add owner as member
+	now := time.Now()
+	member := &TripMember{
+		TripID:     trip.ID,
+		UserID:     ownerID,
+		Role:       RoleOwner,
+		JoinStatus: JoinStatusJoined,
+		JoinedAt:   &now,
+	}
+	_ = s.repo.AddMember(member)
+	return trip, nil
+}
+
+func (s *service) GetTrip(tripID, requesterID uuid.UUID) (*Trip, error) {
+	trip, err := s.repo.FindTripByID(tripID)
+	if err != nil {
+		return nil, err
+	}
+	// Only members or owner can view
+	if trip.OwnerUserID != requesterID && !s.isMember(tripID, requesterID) {
+		return nil, errors.New("access denied")
+	}
+	return trip, nil
+}
+
+func (s *service) GetMyTrips(userID uuid.UUID) ([]Trip, error) {
+	owned, err := s.repo.FindTripsByOwner(userID)
+	if err != nil {
+		return nil, err
+	}
+	joined, err := s.repo.FindTripsByMember(userID)
+	if err != nil {
+		return nil, err
+	}
+	// Merge, deduplicating by ID
+	seen := make(map[uuid.UUID]bool)
+	merged := make([]Trip, 0, len(owned)+len(joined))
+	for _, t := range owned {
+		if !seen[t.ID] {
+			seen[t.ID] = true
+			merged = append(merged, t)
+		}
+	}
+	for _, t := range joined {
+		if !seen[t.ID] {
+			seen[t.ID] = true
+			merged = append(merged, t)
+		}
+	}
+	return merged, nil
+}
+
+func (s *service) UpdateTrip(tripID, requesterID uuid.UUID, req *UpdateTripRequest) (*Trip, error) {
+	trip, err := s.repo.FindTripByID(tripID)
+	if err != nil {
+		return nil, err
+	}
+	if !s.isOwnerOrAdmin(tripID, requesterID) {
+		return nil, errors.New("only owner or admin can update trip")
+	}
+	if req.Title != "" {
+		trip.Title = req.Title
+	}
+	if req.Destination != "" {
+		trip.Destination = req.Destination
+	}
+	if req.Status != "" {
+		trip.Status = req.Status
+	}
+	if req.TripType != "" {
+		trip.TripType = req.TripType
+	}
+	if req.VibeTags != nil {
+		trip.VibeTags = req.VibeTags
+	}
+	if req.TravelersPlanned > 0 {
+		trip.TravelersPlanned = req.TravelersPlanned
+	}
+	if req.StartDate != nil {
+		trip.StartDate = req.StartDate
+	}
+	if req.EndDate != nil {
+		trip.EndDate = req.EndDate
+	}
+	if req.Budget > 0 {
+		trip.Budget = req.Budget
+	}
+	if req.CoverImageURL != nil {
+		trip.CoverImageURL = req.CoverImageURL
+	}
+	if req.Notes != nil {
+		trip.Notes = req.Notes
+	}
+	if err := s.repo.UpdateTrip(trip); err != nil {
+		return nil, err
+	}
+	return trip, nil
+}
+
+func (s *service) DeleteTrip(tripID, requesterID uuid.UUID) error {
+	trip, err := s.repo.FindTripByID(tripID)
+	if err != nil {
+		return err
+	}
+	if trip.OwnerUserID != requesterID {
+		return errors.New("only the trip owner can delete this trip")
+	}
+	return s.repo.DeleteTrip(tripID)
+}
+
+// ---- Members ----
+
+func (s *service) InviteMember(tripID, requesterID uuid.UUID, req *InviteMemberRequest) (*TripMember, error) {
+	if !s.isOwnerOrAdmin(tripID, requesterID) {
+		return nil, errors.New("only owner or admin can invite members")
+	}
+	existing, err := s.repo.FindMember(tripID, req.UserID)
+	if err == nil && existing != nil {
+		return nil, errors.New("user is already a member or invited")
+	}
+	role := req.Role
+	if role == "" {
+		role = RoleMember
+	}
+	member := &TripMember{
+		TripID:     tripID,
+		UserID:     req.UserID,
+		Role:       role,
+		JoinStatus: JoinStatusInvited,
+	}
+	if err := s.repo.AddMember(member); err != nil {
+		return nil, err
+	}
+	return member, nil
+}
+
+func (s *service) UpdateMemberStatus(tripID, userID uuid.UUID, req *UpdateMemberStatusRequest) (*TripMember, error) {
+	member, err := s.repo.FindMember(tripID, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("membership not found")
+		}
+		return nil, err
+	}
+	member.JoinStatus = req.JoinStatus
+	if req.JoinStatus == JoinStatusJoined {
+		now := time.Now()
+		member.JoinedAt = &now
+	}
+	if err := s.repo.UpdateMember(member); err != nil {
+		return nil, err
+	}
+	return member, nil
+}
+
+func (s *service) RemoveMember(tripID, requesterID, targetUserID uuid.UUID) error {
+	if !s.isOwnerOrAdmin(tripID, requesterID) && requesterID != targetUserID {
+		return errors.New("not authorized to remove this member")
+	}
+	return s.repo.RemoveMember(tripID, targetUserID)
+}
+
+func (s *service) GetMembers(tripID uuid.UUID) ([]TripMember, error) {
+	return s.repo.FindMembersByTrip(tripID)
+}
+
+// ---- Itinerary ----
+
+func (s *service) AddItineraryItem(tripID, userID uuid.UUID, req *CreateItineraryItemRequest) (*TripItineraryItem, error) {
+	if !s.isMember(tripID, userID) {
+		return nil, errors.New("only trip members can add itinerary items")
+	}
+	item := &TripItineraryItem{
+		TripID:          tripID,
+		DayNumber:       req.DayNumber,
+		Title:           req.Title,
+		ItemType:        req.ItemType,
+		StartTime:       req.StartTime,
+		LocationName:    req.LocationName,
+		Notes:           req.Notes,
+		Lat:             req.Lat,
+		Lng:             req.Lng,
+		SortOrder:       req.SortOrder,
+		CreatedByUserID: &userID,
+	}
+	if err := s.repo.CreateItineraryItem(item); err != nil {
+		return nil, err
+	}
+	return item, nil
+}
+
+func (s *service) GetItinerary(tripID uuid.UUID) ([]TripItineraryItem, error) {
+	return s.repo.FindItineraryByTrip(tripID)
+}
+
+func (s *service) UpdateItineraryItem(itemID, requesterID uuid.UUID, req *UpdateItineraryItemRequest) (*TripItineraryItem, error) {
+	item, err := s.repo.FindItineraryItemByID(itemID)
+	if err != nil {
+		return nil, err
+	}
+	if !s.isMember(item.TripID, requesterID) {
+		return nil, errors.New("access denied")
+	}
+	if req.Title != "" {
+		item.Title = req.Title
+	}
+	if req.ItemType != "" {
+		item.ItemType = req.ItemType
+	}
+	if req.DayNumber > 0 {
+		item.DayNumber = req.DayNumber
+	}
+	if req.StartTime != nil {
+		item.StartTime = req.StartTime
+	}
+	if req.LocationName != "" {
+		item.LocationName = req.LocationName
+	}
+	if req.Notes != nil {
+		item.Notes = req.Notes
+	}
+	if req.Lat != nil {
+		item.Lat = req.Lat
+	}
+	if req.Lng != nil {
+		item.Lng = req.Lng
+	}
+	item.SortOrder = req.SortOrder
+	if err := s.repo.UpdateItineraryItem(item); err != nil {
+		return nil, err
+	}
+	return item, nil
+}
+
+func (s *service) DeleteItineraryItem(itemID, requesterID uuid.UUID) error {
+	item, err := s.repo.FindItineraryItemByID(itemID)
+	if err != nil {
+		return err
+	}
+	if !s.isOwnerOrAdmin(item.TripID, requesterID) {
+		return errors.New("only owner or admin can delete itinerary items")
+	}
+	return s.repo.DeleteItineraryItem(itemID)
+}
+
+// ---- Expenses ----
+
+func (s *service) AddExpense(tripID, userID uuid.UUID, req *CreateExpenseRequest) (*TripExpense, error) {
+	if !s.isMember(tripID, userID) {
+		return nil, errors.New("only trip members can log expenses")
+	}
+	currency := req.CurrencyCode
+	if currency == "" {
+		currency = "USD"
+	}
+	expense := &TripExpense{
+		TripID:          tripID,
+		CreatedByUserID: &userID,
+		Description:     req.Description,
+		Category:        req.Category,
+		Amount:          req.Amount,
+		ExpenseDate:     req.ExpenseDate,
+		CurrencyCode:    currency,
+	}
+	if err := s.repo.CreateExpense(expense); err != nil {
+		return nil, err
+	}
+	// Update cached spent total
+	total, _ := s.repo.SumExpensesByTrip(tripID)
+	trip, err := s.repo.FindTripByID(tripID)
+	if err == nil {
+		trip.Spent = total
+		_ = s.repo.UpdateTrip(trip)
+	}
+	return expense, nil
+}
+
+func (s *service) GetExpenses(tripID uuid.UUID) ([]TripExpense, error) {
+	return s.repo.FindExpensesByTrip(tripID)
+}
+
+func (s *service) UpdateExpense(expenseID, requesterID uuid.UUID, req *UpdateExpenseRequest) (*TripExpense, error) {
+	expense, err := s.repo.FindExpenseByID(expenseID)
+	if err != nil {
+		return nil, err
+	}
+	if expense.CreatedByUserID == nil || *expense.CreatedByUserID != requesterID {
+		if !s.isOwnerOrAdmin(expense.TripID, requesterID) {
+			return nil, errors.New("not authorized to edit this expense")
+		}
+	}
+	if req.Description != "" {
+		expense.Description = req.Description
+	}
+	if req.Category != "" {
+		expense.Category = req.Category
+	}
+	if req.Amount > 0 {
+		expense.Amount = req.Amount
+	}
+	if !req.ExpenseDate.IsZero() {
+		expense.ExpenseDate = req.ExpenseDate
+	}
+	if req.CurrencyCode != "" {
+		expense.CurrencyCode = req.CurrencyCode
+	}
+	if err := s.repo.UpdateExpense(expense); err != nil {
+		return nil, err
+	}
+	// Refresh cached spent
+	total, _ := s.repo.SumExpensesByTrip(expense.TripID)
+	trip, err := s.repo.FindTripByID(expense.TripID)
+	if err == nil {
+		trip.Spent = total
+		_ = s.repo.UpdateTrip(trip)
+	}
+	return expense, nil
+}
+
+func (s *service) DeleteExpense(expenseID, requesterID uuid.UUID) error {
+	expense, err := s.repo.FindExpenseByID(expenseID)
+	if err != nil {
+		return err
+	}
+	if expense.CreatedByUserID == nil || *expense.CreatedByUserID != requesterID {
+		if !s.isOwnerOrAdmin(expense.TripID, requesterID) {
+			return errors.New("not authorized to delete this expense")
+		}
+	}
+	if err := s.repo.DeleteExpense(expenseID); err != nil {
+		return err
+	}
+	// Refresh cached spent
+	total, _ := s.repo.SumExpensesByTrip(expense.TripID)
+	trip, err := s.repo.FindTripByID(expense.TripID)
+	if err == nil {
+		trip.Spent = total
+		_ = s.repo.UpdateTrip(trip)
+	}
+	return nil
+}
