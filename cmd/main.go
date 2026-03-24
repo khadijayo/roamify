@@ -91,45 +91,52 @@ func main() {
 func wireModules(api *gin.RouterGroup) {
 	db := config.DB
 
+	// ✅ Create auth middleware ONCE
+	authMiddleware := middleware.Auth(config.App.JWTSecret)
+
 	// ---- Users ----
 	userRepo := users.NewRepository(db)
-	userSvc := users.NewService(userRepo)
+	userSvc := users.NewService(
+		userRepo,
+		config.App.JWTSecret,
+		config.App.JWTExpiryHours,
+	)
 	userHandler := users.NewHandler(userSvc)
-	users.RegisterRoutes(api, userHandler)
+	users.RegisterRoutes(api, userHandler, authMiddleware)
 
 	// ---- Notifications ----
 	notifRepo := notifications.NewRepository(db)
 	notifSvc := notifications.NewService(notifRepo)
 	notifHandler := notifications.NewHandler(notifSvc)
-	notifications.RegisterRoutes(api, notifHandler)
+	notifications.RegisterRoutes(api, notifHandler, authMiddleware)
 
 	// ---- Trips ----
 	tripRepo := trips.NewRepository(db)
 	tripSvc := trips.NewService(tripRepo)
 	tripHandler := trips.NewHandler(tripSvc)
-	trips.RegisterRoutes(api, tripHandler)
+	trips.RegisterRoutes(api, tripHandler, authMiddleware)
 
 	// ---- Posts ----
 	postRepo := posts.NewRepository(db)
 	postSvc := posts.NewService(postRepo)
 	postHandler := posts.NewHandler(postSvc)
-	posts.RegisterRoutes(api, postHandler)
+	posts.RegisterRoutes(api, postHandler, authMiddleware)
 
 	// ---- Wishlist ----
 	wishlistRepo := wishlist.NewRepository(db)
 	wishlistSvc := wishlist.NewService(wishlistRepo)
 	wishlistHandler := wishlist.NewHandler(wishlistSvc)
-	wishlist.RegisterRoutes(api, wishlistHandler)
+	wishlist.RegisterRoutes(api, wishlistHandler, authMiddleware)
 
 	// ---- Challenges ----
 	challengeRepo := challenges.NewRepository(db)
 	challengeSvc := challenges.NewService(challengeRepo, userRepo)
 	challengeHandler := challenges.NewHandler(challengeSvc)
-	challenges.RegisterRoutes(api, challengeHandler)
+	challenges.RegisterRoutes(api, challengeHandler, authMiddleware)
 
 	// ---- Passport ----
 	passportRepo := passport.NewRepository(db)
 	passportSvc := passport.NewService(passportRepo, userRepo)
 	passportHandler := passport.NewHandler(passportSvc)
-	passport.RegisterRoutes(api, passportHandler)
+	passport.RegisterRoutes(api, passportHandler, authMiddleware)
 }

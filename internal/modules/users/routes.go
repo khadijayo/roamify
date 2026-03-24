@@ -2,23 +2,23 @@ package users
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/khadijayo/roamify/pkg/middleware"
 )
 
-func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
-	// Public auth routes
-	auth := rg.Group("/auth")
+func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
+	// Public routes
+	authRoutes := r.Group("/auth")
 	{
-		auth.POST("/register", h.Register)
-		auth.POST("/login", h.Login)
+		authRoutes.POST("/register", h.Register)
+		authRoutes.POST("/login", h.Login)
 	}
 
-	// Protected user routes
-	me := rg.Group("/users", middleware.Auth())
+	// Protected routes
+	userRoutes := r.Group("/users")
+	userRoutes.Use(auth)
 	{
-		me.GET("/me", h.GetMe)
-		me.PATCH("/me", h.UpdateMe)
-		me.GET("/me/vibe", h.GetVibeProfile)
-		me.PUT("/me/vibe", h.UpsertVibeProfile)
+		userRoutes.GET("/me", h.GetMe)
+		userRoutes.PATCH("/me", h.UpdateMe)
+		userRoutes.GET("/me/vibe", h.GetVibeProfile)
+		userRoutes.PUT("/me/vibe", h.UpsertVibeProfile)
 	}
 }

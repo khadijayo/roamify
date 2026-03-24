@@ -12,9 +12,10 @@ import (
 const UserIDKey = "userID"
 const UserEmailKey = "userEmail"
 
-func Auth() gin.HandlerFunc {
+func Auth(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
+
 		if header == "" || !strings.HasPrefix(header, "Bearer ") {
 			response.Unauthorized(c, "missing or malformed authorization header")
 			c.Abort()
@@ -22,7 +23,8 @@ func Auth() gin.HandlerFunc {
 		}
 
 		tokenStr := strings.TrimPrefix(header, "Bearer ")
-		claims, err := pkgjwt.Parse(tokenStr)
+
+		claims, err := pkgjwt.Parse(tokenStr, secret)
 		if err != nil {
 			response.Unauthorized(c, "invalid or expired token")
 			c.Abort()
@@ -35,7 +37,6 @@ func Auth() gin.HandlerFunc {
 	}
 }
 
-// GetUserID is a helper for handlers to extract the authenticated user's ID.
 func GetUserID(c *gin.Context) uuid.UUID {
 	id, _ := c.Get(UserIDKey)
 	return id.(uuid.UUID)

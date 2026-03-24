@@ -2,11 +2,10 @@ package passport
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/khadijayo/roamify/pkg/middleware"
 )
 
-func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
-	p := rg.Group("/passport", middleware.Auth())
+func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
+	p := r.Group("/passport", auth)
 	{
 		// Vault
 		p.PUT("/vault", h.UpsertVault)

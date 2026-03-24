@@ -2,14 +2,13 @@ package trips
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/khadijayo/roamify/pkg/middleware"
 )
 
-func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
-	trips := rg.Group("/trips", middleware.Auth())
+func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
+	trips := r.Group("/trips", auth)
 	{
-		trips.POST("", h.CreateTrip)
-		trips.GET("", h.GetMyTrips)
+		trips.POST("/", h.CreateTrip)
+		trips.GET("/", h.GetMyTrips)
 		trips.GET("/:tripId", h.GetTrip)
 		trips.PATCH("/:tripId", h.UpdateTrip)
 		trips.DELETE("/:tripId", h.DeleteTrip)

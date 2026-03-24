@@ -2,11 +2,11 @@ package wishlist
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/khadijayo/roamify/pkg/middleware"
 )
 
-func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
-	w := rg.Group("/wishlist", middleware.Auth())
+
+func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
+	w := r.Group("/wishlist", auth)
 	{
 		// Spots / Items
 		w.POST("/items", h.CreateItem)

@@ -20,11 +20,17 @@ type Service interface {
 }
 
 type service struct {
-	repo Repository
+	repo           Repository
+	jwtSecret      string
+	jwtExpiryHours int
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo: repo}
+func NewService(repo Repository, jwtSecret string, jwtExpiryHours int) Service {
+	return &service{
+		repo:           repo,
+		jwtSecret:      jwtSecret,
+		jwtExpiryHours: jwtExpiryHours,
+	}
 }
 
 func (s *service) Register(req *RegisterRequest) (*AuthResponse, error) {
@@ -54,10 +60,11 @@ func (s *service) Register(req *RegisterRequest) (*AuthResponse, error) {
 		return nil, err
 	}
 
-	token, err := pkgjwt.Generate(user.ID, req.Email)
+	token, err := pkgjwt.Generate(user.ID, req.Email, s.jwtSecret, s.jwtExpiryHours)
 	if err != nil {
 		return nil, err
 	}
+
 	return &AuthResponse{Token: token, User: user}, nil
 }
 
@@ -77,10 +84,11 @@ func (s *service) Login(req *LoginRequest) (*AuthResponse, error) {
 	user.LastLoginAt = &now
 	_ = s.repo.UpdateUser(user)
 
-	token, err := pkgjwt.Generate(user.ID, *user.Email)
+	token, err := pkgjwt.Generate(user.ID, *user.Email, s.jwtSecret, s.jwtExpiryHours)
 	if err != nil {
 		return nil, err
 	}
+
 	return &AuthResponse{Token: token, User: user}, nil
 }
 
