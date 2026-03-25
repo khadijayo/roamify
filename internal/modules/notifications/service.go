@@ -24,7 +24,7 @@ func (s *service) GetSettings(userID uuid.UUID) (*UserNotificationSetting, error
 	settings, err := s.repo.FindByUser(userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// Auto-create with defaults
+
 			defaults := &UserNotificationSetting{
 				UserID:                 userID,
 				TripRemindersEnabled:   true,

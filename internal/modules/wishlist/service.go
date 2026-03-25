@@ -7,20 +7,17 @@ import (
 )
 
 type Service interface {
-	// Items
 	CreateItem(userID uuid.UUID, req *CreateItemRequest) (*WishlistItem, error)
 	GetItems(userID uuid.UUID) ([]WishlistItem, error)
 	UpdateItem(itemID, userID uuid.UUID, req *UpdateItemRequest) (*WishlistItem, error)
 	DeleteItem(itemID, userID uuid.UUID) error
 
-	// Collections
 	CreateCollection(userID uuid.UUID, req *CreateCollectionRequest) (*WishlistCollection, error)
 	GetCollections(userID uuid.UUID) ([]WishlistCollection, error)
 	GetCollection(collectionID, userID uuid.UUID) (*WishlistCollection, error)
 	UpdateCollection(collectionID, userID uuid.UUID, req *UpdateCollectionRequest) (*WishlistCollection, error)
 	DeleteCollection(collectionID, userID uuid.UUID) error
 
-	// Collection-Item mapping
 	AddItemToCollection(collectionID, userID uuid.UUID, req *AddToCollectionRequest) error
 	RemoveItemFromCollection(collectionID, itemID, userID uuid.UUID) error
 }
@@ -32,8 +29,6 @@ type service struct {
 func NewService(repo Repository) Service {
 	return &service{repo: repo}
 }
-
-// ---- Items ----
 
 func (s *service) CreateItem(userID uuid.UUID, req *CreateItemRequest) (*WishlistItem, error) {
 	item := &WishlistItem{
@@ -87,8 +82,6 @@ func (s *service) DeleteItem(itemID, userID uuid.UUID) error {
 	}
 	return s.repo.DeleteItem(itemID)
 }
-
-// ---- Collections ----
 
 func (s *service) CreateCollection(userID uuid.UUID, req *CreateCollectionRequest) (*WishlistCollection, error) {
 	col := &WishlistCollection{

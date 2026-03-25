@@ -15,9 +15,6 @@ func NewHandler(svc Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// ---- Vault ----
-
-// PUT /passport/vault
 func (h *Handler) UpsertVault(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	var req UpsertVaultRequest
@@ -33,7 +30,6 @@ func (h *Handler) UpsertVault(c *gin.Context) {
 	response.OK(c, "passport vault saved", record)
 }
 
-// GET /passport/vault
 func (h *Handler) GetVault(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	record, err := h.svc.GetVault(userID)
@@ -44,7 +40,6 @@ func (h *Handler) GetVault(c *gin.Context) {
 	response.OK(c, "passport vault fetched", record)
 }
 
-// DELETE /passport/vault
 func (h *Handler) DeleteVault(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if err := h.svc.DeleteVault(userID); err != nil {
@@ -54,9 +49,6 @@ func (h *Handler) DeleteVault(c *gin.Context) {
 	response.OK(c, "passport vault deleted", nil)
 }
 
-// ---- Stamps ----
-
-// POST /passport/stamps
 func (h *Handler) AddStamp(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	var req AddStampRequest
@@ -72,7 +64,6 @@ func (h *Handler) AddStamp(c *gin.Context) {
 	response.Created(c, "stamp added", stamp)
 }
 
-// GET /passport/stamps
 func (h *Handler) GetStamps(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	stamps, err := h.svc.GetStamps(userID)
@@ -83,7 +74,6 @@ func (h *Handler) GetStamps(c *gin.Context) {
 	response.OK(c, "stamps fetched", stamps)
 }
 
-// DELETE /passport/stamps/:stampId
 func (h *Handler) DeleteStamp(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	stampID, err := uuid.Parse(c.Param("stampId"))

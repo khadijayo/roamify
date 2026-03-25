@@ -9,26 +9,22 @@ import (
 )
 
 type Service interface {
-	// Trips
 	CreateTrip(ownerID uuid.UUID, req *CreateTripRequest) (*Trip, error)
 	GetTrip(tripID, requesterID uuid.UUID) (*Trip, error)
 	GetMyTrips(userID uuid.UUID) ([]Trip, error)
 	UpdateTrip(tripID, requesterID uuid.UUID, req *UpdateTripRequest) (*Trip, error)
 	DeleteTrip(tripID, requesterID uuid.UUID) error
 
-	// Members
 	InviteMember(tripID, requesterID uuid.UUID, req *InviteMemberRequest) (*TripMember, error)
 	UpdateMemberStatus(tripID, userID uuid.UUID, req *UpdateMemberStatusRequest) (*TripMember, error)
 	RemoveMember(tripID, requesterID, targetUserID uuid.UUID) error
 	GetMembers(tripID uuid.UUID) ([]TripMember, error)
 
-	// Itinerary
 	AddItineraryItem(tripID, userID uuid.UUID, req *CreateItineraryItemRequest) (*TripItineraryItem, error)
 	GetItinerary(tripID uuid.UUID) ([]TripItineraryItem, error)
 	UpdateItineraryItem(itemID, requesterID uuid.UUID, req *UpdateItineraryItemRequest) (*TripItineraryItem, error)
 	DeleteItineraryItem(itemID, requesterID uuid.UUID) error
 
-	// Expenses
 	AddExpense(tripID, userID uuid.UUID, req *CreateExpenseRequest) (*TripExpense, error)
 	GetExpenses(tripID uuid.UUID) ([]TripExpense, error)
 	UpdateExpense(expenseID, requesterID uuid.UUID, req *UpdateExpenseRequest) (*TripExpense, error)
@@ -43,8 +39,6 @@ func NewService(repo Repository) Service {
 	return &service{repo: repo}
 }
 
-// ---- helpers ----
-
 func (s *service) isMember(tripID, userID uuid.UUID) bool {
 	m, err := s.repo.FindMember(tripID, userID)
 	return err == nil && (m.JoinStatus == JoinStatusJoined)
@@ -57,8 +51,6 @@ func (s *service) isOwnerOrAdmin(tripID, userID uuid.UUID) bool {
 	}
 	return m.Role == RoleOwner || m.Role == RoleAdmin
 }
-
-// ---- Trips ----
 
 func (s *service) CreateTrip(ownerID uuid.UUID, req *CreateTripRequest) (*Trip, error) {
 	travelers := req.TravelersPlanned
@@ -82,7 +74,7 @@ func (s *service) CreateTrip(ownerID uuid.UUID, req *CreateTripRequest) (*Trip, 
 	if err := s.repo.CreateTrip(trip); err != nil {
 		return nil, err
 	}
-	// Auto-add owner as member
+
 	now := time.Now()
 	member := &TripMember{
 		TripID:     trip.ID,
@@ -100,7 +92,7 @@ func (s *service) GetTrip(tripID, requesterID uuid.UUID) (*Trip, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Only members or owner can view
+
 	if trip.OwnerUserID != requesterID && !s.isMember(tripID, requesterID) {
 		return nil, errors.New("access denied")
 	}
@@ -116,7 +108,7 @@ func (s *service) GetMyTrips(userID uuid.UUID) ([]Trip, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Merge, deduplicating by ID
+
 	seen := make(map[uuid.UUID]bool)
 	merged := make([]Trip, 0, len(owned)+len(joined))
 	for _, t := range owned {
@@ -192,8 +184,6 @@ func (s *service) DeleteTrip(tripID, requesterID uuid.UUID) error {
 	return s.repo.DeleteTrip(tripID)
 }
 
-// ---- Members ----
-
 func (s *service) InviteMember(tripID, requesterID uuid.UUID, req *InviteMemberRequest) (*TripMember, error) {
 	if !s.isOwnerOrAdmin(tripID, requesterID) {
 		return nil, errors.New("only owner or admin can invite members")
@@ -247,8 +237,6 @@ func (s *service) RemoveMember(tripID, requesterID, targetUserID uuid.UUID) erro
 func (s *service) GetMembers(tripID uuid.UUID) ([]TripMember, error) {
 	return s.repo.FindMembersByTrip(tripID)
 }
-
-// ---- Itinerary ----
 
 func (s *service) AddItineraryItem(tripID, userID uuid.UUID, req *CreateItineraryItemRequest) (*TripItineraryItem, error) {
 	if !s.isMember(tripID, userID) {
@@ -327,8 +315,6 @@ func (s *service) DeleteItineraryItem(itemID, requesterID uuid.UUID) error {
 	return s.repo.DeleteItineraryItem(itemID)
 }
 
-// ---- Expenses ----
-
 func (s *service) AddExpense(tripID, userID uuid.UUID, req *CreateExpenseRequest) (*TripExpense, error) {
 	if !s.isMember(tripID, userID) {
 		return nil, errors.New("only trip members can log expenses")
@@ -349,7 +335,7 @@ func (s *service) AddExpense(tripID, userID uuid.UUID, req *CreateExpenseRequest
 	if err := s.repo.CreateExpense(expense); err != nil {
 		return nil, err
 	}
-	// Update cached spent total
+
 	total, _ := s.repo.SumExpensesByTrip(tripID)
 	trip, err := s.repo.FindTripByID(tripID)
 	if err == nil {
@@ -391,7 +377,7 @@ func (s *service) UpdateExpense(expenseID, requesterID uuid.UUID, req *UpdateExp
 	if err := s.repo.UpdateExpense(expense); err != nil {
 		return nil, err
 	}
-	// Refresh cached spent
+
 	total, _ := s.repo.SumExpensesByTrip(expense.TripID)
 	trip, err := s.repo.FindTripByID(expense.TripID)
 	if err == nil {
@@ -414,7 +400,7 @@ func (s *service) DeleteExpense(expenseID, requesterID uuid.UUID) error {
 	if err := s.repo.DeleteExpense(expenseID); err != nil {
 		return err
 	}
-	// Refresh cached spent
+
 	total, _ := s.repo.SumExpensesByTrip(expense.TripID)
 	trip, err := s.repo.FindTripByID(expense.TripID)
 	if err == nil {

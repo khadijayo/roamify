@@ -16,6 +16,5 @@ func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
 		p.DELETE("/:postId/like", h.UnlikePost)
 	}
 
-	// User post grid — nested under /users
 	r.GET("/users/:userId/posts", auth, h.GetUserPosts)
 }

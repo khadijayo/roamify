@@ -15,8 +15,6 @@ func NewHandler(svc Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// ---- Items ----
-
 func (h *Handler) CreateItem(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	var req CreateItemRequest
@@ -75,8 +73,6 @@ func (h *Handler) DeleteItem(c *gin.Context) {
 	}
 	response.OK(c, "wishlist item deleted", nil)
 }
-
-// ---- Collections ----
 
 func (h *Handler) CreateCollection(c *gin.Context) {
 	userID := middleware.GetUserID(c)

@@ -6,21 +6,18 @@ import (
 )
 
 type Repository interface {
-	// Items
 	CreateItem(item *WishlistItem) error
 	FindItemByID(id uuid.UUID) (*WishlistItem, error)
 	FindItemsByUser(userID uuid.UUID) ([]WishlistItem, error)
 	UpdateItem(item *WishlistItem) error
 	DeleteItem(id uuid.UUID) error
 
-	// Collections
 	CreateCollection(c *WishlistCollection) error
 	FindCollectionByID(id uuid.UUID) (*WishlistCollection, error)
 	FindCollectionsByUser(userID uuid.UUID) ([]WishlistCollection, error)
 	UpdateCollection(c *WishlistCollection) error
 	DeleteCollection(id uuid.UUID) error
 
-	// Collection-Item mapping
 	AddItemToCollection(link *WishlistCollectionItem) error
 	RemoveItemFromCollection(collectionID, itemID uuid.UUID) error
 	FindCollectionItems(collectionID uuid.UUID) ([]WishlistItem, error)

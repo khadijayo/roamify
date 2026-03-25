@@ -51,7 +51,6 @@ type Trip struct {
 	UpdatedAt        time.Time      `                                                      json:"updated_at"`
 	DeletedAt        gorm.DeletedAt `gorm:"index"                                          json:"-"`
 
-	// Associations
 	Members        []TripMember        `gorm:"foreignKey:TripID" json:"members,omitempty"`
 	ItineraryItems []TripItineraryItem `gorm:"foreignKey:TripID" json:"itinerary_items,omitempty"`
 	Expenses       []TripExpense       `gorm:"foreignKey:TripID" json:"expenses,omitempty"`
@@ -105,10 +104,6 @@ type ChatMessage struct {
 	Message   string    `gorm:"type:text;not null"                             json:"message"`
 	CreatedAt time.Time `                                                      json:"created_at"`
 }
-
-// ---------------------------------------------------------------------------
-// DTOs
-// ---------------------------------------------------------------------------
 
 type CreateTripRequest struct {
 	Title            string     `json:"title"            binding:"required"`

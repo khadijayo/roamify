@@ -5,14 +5,14 @@ import (
 )
 
 func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
-	// Public routes
+
 	authRoutes := r.Group("/auth")
 	{
 		authRoutes.POST("/register", h.Register)
 		authRoutes.POST("/login", h.Login)
+		authRoutes.POST("/social", h.SocialAuth)
 	}
 
-	// Protected routes
 	userRoutes := r.Group("/users")
 	userRoutes.Use(auth)
 	{
@@ -20,5 +20,11 @@ func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
 		userRoutes.PATCH("/me", h.UpdateMe)
 		userRoutes.GET("/me/vibe", h.GetVibeProfile)
 		userRoutes.PUT("/me/vibe", h.UpsertVibeProfile)
+		userRoutes.GET("/me/privacy", h.GetPrivacySettings)
+		userRoutes.PATCH("/me/privacy", h.UpdatePrivacySettings)
+		userRoutes.POST("/follow", h.FollowUser)
+		userRoutes.DELETE("/follow/:userId", h.UnfollowUser)
+		userRoutes.GET("/:userId/followers", h.GetFollowers)
+		userRoutes.GET("/:userId/following", h.GetFollowing)
 	}
 }

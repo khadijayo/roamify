@@ -14,7 +14,6 @@ func NewHandler(svc Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// GET /notifications/settings
 func (h *Handler) GetSettings(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	settings, err := h.svc.GetSettings(userID)
@@ -25,7 +24,6 @@ func (h *Handler) GetSettings(c *gin.Context) {
 	response.OK(c, "notification settings fetched", settings)
 }
 
-// PATCH /notifications/settings
 func (h *Handler) UpdateSettings(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	var req UpdateNotificationSettingsRequest

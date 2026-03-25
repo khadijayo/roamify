@@ -14,7 +14,6 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// Generate creates a JWT token
 func Generate(userID uuid.UUID, email string, secret string, expiryHours int) (string, error) {
 	expiry := time.Duration(expiryHours) * time.Hour
 
@@ -31,7 +30,6 @@ func Generate(userID uuid.UUID, email string, secret string, expiryHours int) (s
 	return token.SignedString([]byte(secret))
 }
 
-// Parse validates and parses a JWT token
 func Parse(tokenStr string, secret string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {

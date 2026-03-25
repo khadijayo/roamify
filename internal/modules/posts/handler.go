@@ -17,7 +17,6 @@ func NewHandler(svc Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// POST /posts
 func (h *Handler) CreatePost(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	var req CreatePostRequest
@@ -33,7 +32,6 @@ func (h *Handler) CreatePost(c *gin.Context) {
 	response.Created(c, "post created", post)
 }
 
-// GET /posts  (feed)
 func (h *Handler) GetFeed(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
@@ -45,7 +43,6 @@ func (h *Handler) GetFeed(c *gin.Context) {
 	response.OKPaginated(c, "feed fetched", posts, meta)
 }
 
-// GET /posts/:postId
 func (h *Handler) GetPost(c *gin.Context) {
 	postID, err := uuid.Parse(c.Param("postId"))
 	if err != nil {
@@ -60,7 +57,6 @@ func (h *Handler) GetPost(c *gin.Context) {
 	response.OK(c, "post fetched", post)
 }
 
-// GET /users/:userId/posts
 func (h *Handler) GetUserPosts(c *gin.Context) {
 	authorID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
@@ -77,7 +73,6 @@ func (h *Handler) GetUserPosts(c *gin.Context) {
 	response.OKPaginated(c, "user posts fetched", posts, meta)
 }
 
-// PATCH /posts/:postId
 func (h *Handler) UpdatePost(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	postID, err := uuid.Parse(c.Param("postId"))
@@ -98,7 +93,6 @@ func (h *Handler) UpdatePost(c *gin.Context) {
 	response.OK(c, "post updated", post)
 }
 
-// DELETE /posts/:postId
 func (h *Handler) DeletePost(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	postID, err := uuid.Parse(c.Param("postId"))
@@ -113,7 +107,6 @@ func (h *Handler) DeletePost(c *gin.Context) {
 	response.OK(c, "post deleted", nil)
 }
 
-// POST /posts/:postId/like
 func (h *Handler) LikePost(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	postID, err := uuid.Parse(c.Param("postId"))
@@ -128,7 +121,6 @@ func (h *Handler) LikePost(c *gin.Context) {
 	response.OK(c, "post liked", nil)
 }
 
-// DELETE /posts/:postId/like
 func (h *Handler) UnlikePost(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	postID, err := uuid.Parse(c.Param("postId"))

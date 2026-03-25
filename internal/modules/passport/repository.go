@@ -6,12 +6,10 @@ import (
 )
 
 type Repository interface {
-	// Vault
 	UpsertVault(record *PassportVaultRecord) error
 	FindVaultByUser(userID uuid.UUID) (*PassportVaultRecord, error)
 	DeleteVault(userID uuid.UUID) error
 
-	// Stamps
 	AddStamp(stamp *PassportStamp) error
 	FindStampsByUser(userID uuid.UUID) ([]PassportStamp, error)
 	FindStamp(userID uuid.UUID, countryCode string, dateVisited string) (*PassportStamp, error)
@@ -28,7 +26,7 @@ func NewRepository(db *gorm.DB) Repository {
 }
 
 func (r *repository) UpsertVault(record *PassportVaultRecord) error {
-	// Use Save so it updates if UserID already exists (unique index)
+
 	return r.db.Save(record).Error
 }
 

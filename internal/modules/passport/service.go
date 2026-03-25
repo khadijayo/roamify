@@ -28,8 +28,6 @@ func NewService(repo Repository, userRepo users.Repository) Service {
 	return &service{repo: repo, userRepo: userRepo}
 }
 
-// ---- Vault ----
-
 func (s *service) UpsertVault(userID uuid.UUID, req *UpsertVaultRequest) (*PassportVaultRecord, error) {
 	existing, err := s.repo.FindVaultByUser(userID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -74,13 +72,10 @@ func (s *service) DeleteVault(userID uuid.UUID) error {
 	return s.repo.DeleteVault(userID)
 }
 
-// ---- Stamps ----
-
 func (s *service) AddStamp(userID uuid.UUID, req *AddStampRequest) (*PassportStamp, error) {
 	dateStr := req.DateVisited.Format("2006-01-02")
 	countryCode := strings.ToUpper(req.CountryCode)
 
-	// Enforce unique (user_id, country_code, date_visited)
 	existing, err := s.repo.FindStamp(userID, countryCode, dateStr)
 	if err == nil && existing != nil {
 		return nil, errors.New("stamp already exists for this country and date")
@@ -96,7 +91,6 @@ func (s *service) AddStamp(userID uuid.UUID, req *AddStampRequest) (*PassportSta
 		return nil, err
 	}
 
-	// Update countries_visited count on the vibe profile
 	count, _ := s.repo.CountStampsByUser(userID)
 	vp, err := s.userRepo.GetVibeProfile(userID)
 	if err == nil {
@@ -116,7 +110,7 @@ func (s *service) DeleteStamp(stampID, userID uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	// Ensure stamp belongs to this user
+
 	found := false
 	for _, st := range stamps {
 		if st.ID == stampID {
@@ -130,7 +124,7 @@ func (s *service) DeleteStamp(stampID, userID uuid.UUID) error {
 	if err := s.repo.DeleteStamp(stampID); err != nil {
 		return err
 	}
-	// Refresh count
+
 	count, _ := s.repo.CountStampsByUser(userID)
 	vp, err := s.userRepo.GetVibeProfile(userID)
 	if err == nil {

@@ -1,0 +1,260 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Roamify Server API",
+    "version": "1.0.0",
+    "description": "Core API docs for Roamify backend. Authenticated endpoints require Bearer JWT."
+  },
+  "servers": [
+    { "url": "http://localhost:8080" }
+  ],
+  "security": [
+    { "bearerAuth": [] }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "security": [],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "summary": "Register with email/password",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registered",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/APIResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "Login with email/password",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Logged in" }
+        }
+      }
+    },
+    "/api/v1/auth/social": {
+      "post": {
+        "summary": "Social auth (Google/TikTok/Apple)",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SocialAuthRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Social login successful" }
+        }
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "summary": "Get my profile",
+        "responses": { "200": { "description": "OK" } }
+      },
+      "patch": {
+        "summary": "Update my profile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateProfileRequest" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/api/v1/users/me/vibe": {
+      "get": {
+        "summary": "Get my vibe profile",
+        "responses": { "200": { "description": "OK" } }
+      },
+      "put": {
+        "summary": "Create or update my vibe profile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateVibeProfileRequest" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Saved" } }
+      }
+    },
+    "/api/v1/users/me/privacy": {
+      "get": {
+        "summary": "Get my privacy settings",
+        "responses": { "200": { "description": "OK" } }
+      },
+      "patch": {
+        "summary": "Update my privacy settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdatePrivacySettingsRequest" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/api/v1/users/follow": {
+      "post": {
+        "summary": "Follow user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FollowUserRequest" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Followed" } }
+      }
+    },
+    "/api/v1/users/follow/{userId}": {
+      "delete": {
+        "summary": "Unfollow user",
+        "parameters": [
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Unfollowed" } }
+      }
+    },
+    "/api/v1/users/{userId}/followers": {
+      "get": {
+        "summary": "List user followers",
+        "parameters": [
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/v1/users/{userId}/following": {
+      "get": {
+        "summary": "List user following",
+        "parameters": [
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "APIResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "data": { "type": "object" },
+          "error": { "type": "string" }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["full_name", "email", "password"],
+        "properties": {
+          "full_name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 8 }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        }
+      },
+      "SocialAuthRequest": {
+        "type": "object",
+        "required": ["provider", "provider_user_id", "full_name"],
+        "properties": {
+          "provider": { "type": "string", "enum": ["google", "tiktok", "apple"] },
+          "provider_user_id": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "full_name": { "type": "string" },
+          "avatar_url": { "type": "string" }
+        }
+      },
+      "UpdateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "full_name": { "type": "string" },
+          "avatar_url": { "type": "string" }
+        }
+      },
+      "UpdateVibeProfileRequest": {
+        "type": "object",
+        "properties": {
+          "explorer_type": { "type": "string" },
+          "preferred_vibes": { "type": "array", "items": { "type": "string" } },
+          "travel_pace": { "type": "string" },
+          "budget_style": { "type": "string" },
+          "travel_with": { "type": "string" },
+          "interests": { "type": "array", "items": { "type": "string" } },
+          "onboarding_complete": { "type": "boolean" }
+        }
+      },
+      "FollowUserRequest": {
+        "type": "object",
+        "required": ["user_id"],
+        "properties": {
+          "user_id": { "type": "string", "format": "uuid" }
+        }
+      },
+      "UpdatePrivacySettingsRequest": {
+        "type": "object",
+        "properties": {
+          "ghost_mode_enabled": { "type": "boolean" },
+          "data_sharing_enabled": { "type": "boolean" },
+          "map_visibility": { "type": "string" }
+        }
+      }
+    }
+  }
+}

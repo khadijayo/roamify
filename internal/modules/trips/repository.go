@@ -6,7 +6,6 @@ import (
 )
 
 type Repository interface {
-	// Trips
 	CreateTrip(trip *Trip) error
 	FindTripByID(id uuid.UUID) (*Trip, error)
 	FindTripsByOwner(ownerID uuid.UUID) ([]Trip, error)
@@ -14,21 +13,18 @@ type Repository interface {
 	UpdateTrip(trip *Trip) error
 	DeleteTrip(id uuid.UUID) error
 
-	// Members
 	AddMember(member *TripMember) error
 	FindMember(tripID, userID uuid.UUID) (*TripMember, error)
 	FindMembersByTrip(tripID uuid.UUID) ([]TripMember, error)
 	UpdateMember(member *TripMember) error
 	RemoveMember(tripID, userID uuid.UUID) error
 
-	// Itinerary
 	CreateItineraryItem(item *TripItineraryItem) error
 	FindItineraryByTrip(tripID uuid.UUID) ([]TripItineraryItem, error)
 	FindItineraryItemByID(id uuid.UUID) (*TripItineraryItem, error)
 	UpdateItineraryItem(item *TripItineraryItem) error
 	DeleteItineraryItem(id uuid.UUID) error
 
-	// Expenses
 	CreateExpense(expense *TripExpense) error
 	FindExpensesByTrip(tripID uuid.UUID) ([]TripExpense, error)
 	FindExpenseByID(id uuid.UUID) (*TripExpense, error)
@@ -44,8 +40,6 @@ type repository struct {
 func NewRepository(db *gorm.DB) Repository {
 	return &repository{db: db}
 }
-
-// ---- Trips ----
 
 func (r *repository) CreateTrip(trip *Trip) error {
 	return r.db.Create(trip).Error
@@ -85,8 +79,6 @@ func (r *repository) DeleteTrip(id uuid.UUID) error {
 	return r.db.Delete(&Trip{}, "id = ?", id).Error
 }
 
-// ---- Members ----
-
 func (r *repository) AddMember(member *TripMember) error {
 	return r.db.Create(member).Error
 }
@@ -110,8 +102,6 @@ func (r *repository) UpdateMember(member *TripMember) error {
 func (r *repository) RemoveMember(tripID, userID uuid.UUID) error {
 	return r.db.Where("trip_id = ? AND user_id = ?", tripID, userID).Delete(&TripMember{}).Error
 }
-
-// ---- Itinerary ----
 
 func (r *repository) CreateItineraryItem(item *TripItineraryItem) error {
 	return r.db.Create(item).Error
@@ -139,8 +129,6 @@ func (r *repository) UpdateItineraryItem(item *TripItineraryItem) error {
 func (r *repository) DeleteItineraryItem(id uuid.UUID) error {
 	return r.db.Delete(&TripItineraryItem{}, "id = ?", id).Error
 }
-
-// ---- Expenses ----
 
 func (r *repository) CreateExpense(expense *TripExpense) error {
 	return r.db.Create(expense).Error

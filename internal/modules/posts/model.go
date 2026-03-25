@@ -27,7 +27,6 @@ type Post struct {
 	UpdatedAt    time.Time      `                                                      json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"index"                                          json:"-"`
 
-	// Associations
 	Tags  []PostTag  `gorm:"foreignKey:PostID" json:"tags,omitempty"`
 	Likes []PostLike `gorm:"foreignKey:PostID" json:"likes,omitempty"`
 }
@@ -49,10 +48,6 @@ type PostLike struct {
 }
 
 func (PostLike) TableName() string { return "post_likes" }
-
-// ---------------------------------------------------------------------------
-// DTOs
-// ---------------------------------------------------------------------------
 
 type CreatePostRequest struct {
 	Content    string     `json:"content"    binding:"required"`

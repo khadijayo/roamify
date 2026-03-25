@@ -7,19 +7,19 @@ import (
 )
 
 type PassportVaultRecord struct {
-	ID                        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	UserID                    uuid.UUID `gorm:"type:uuid;uniqueIndex;not null"                 json:"user_id"`
-	EncryptedPayload          string    `gorm:"type:text;not null"                             json:"-"`
-	PassportImageURL          *string   `gorm:"type:text"                                      json:"passport_image_url"`
-	ExtractedFullNameMasked   *string   `gorm:"type:varchar(255)"                              json:"extracted_full_name_masked"`
-	ExtractedNationality      *string   `gorm:"type:varchar(100)"                              json:"extracted_nationality"`
-	ExtractedPassportNumMasked *string  `gorm:"type:varchar(50)"                               json:"extracted_passport_number_masked"`
-	ExtractedDateOfBirth      *string   `gorm:"type:varchar(20)"                               json:"extracted_date_of_birth"`
-	ExtractedExpiryDate       *string   `gorm:"type:varchar(20)"                               json:"extracted_expiry_date"`
-	ExtractedCountryCode      *string   `gorm:"type:char(3)"                                   json:"extracted_country_code"`
-	LockVersion               int       `gorm:"default:1"                                      json:"lock_version"`
-	CreatedAt                 time.Time `                                                      json:"created_at"`
-	UpdatedAt                 time.Time `                                                      json:"updated_at"`
+	ID                         uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	UserID                     uuid.UUID `gorm:"type:uuid;uniqueIndex;not null"                 json:"user_id"`
+	EncryptedPayload           string    `gorm:"type:text;not null"                             json:"-"`
+	PassportImageURL           *string   `gorm:"type:text"                                      json:"passport_image_url"`
+	ExtractedFullNameMasked    *string   `gorm:"type:varchar(255)"                              json:"extracted_full_name_masked"`
+	ExtractedNationality       *string   `gorm:"type:varchar(100)"                              json:"extracted_nationality"`
+	ExtractedPassportNumMasked *string   `gorm:"type:varchar(50)"                               json:"extracted_passport_number_masked"`
+	ExtractedDateOfBirth       *string   `gorm:"type:varchar(20)"                               json:"extracted_date_of_birth"`
+	ExtractedExpiryDate        *string   `gorm:"type:varchar(20)"                               json:"extracted_expiry_date"`
+	ExtractedCountryCode       *string   `gorm:"type:char(3)"                                   json:"extracted_country_code"`
+	LockVersion                int       `gorm:"default:1"                                      json:"lock_version"`
+	CreatedAt                  time.Time `                                                      json:"created_at"`
+	UpdatedAt                  time.Time `                                                      json:"updated_at"`
 }
 
 func (PassportVaultRecord) TableName() string { return "passport_vault_records" }
@@ -35,19 +35,15 @@ type PassportStamp struct {
 
 func (PassportStamp) TableName() string { return "passport_stamps" }
 
-// ---------------------------------------------------------------------------
-// DTOs
-// ---------------------------------------------------------------------------
-
 type UpsertVaultRequest struct {
-	EncryptedPayload          string  `json:"encrypted_payload"            binding:"required"`
-	PassportImageURL          *string `json:"passport_image_url"`
-	ExtractedFullNameMasked   *string `json:"extracted_full_name_masked"`
-	ExtractedNationality      *string `json:"extracted_nationality"`
+	EncryptedPayload           string  `json:"encrypted_payload"            binding:"required"`
+	PassportImageURL           *string `json:"passport_image_url"`
+	ExtractedFullNameMasked    *string `json:"extracted_full_name_masked"`
+	ExtractedNationality       *string `json:"extracted_nationality"`
 	ExtractedPassportNumMasked *string `json:"extracted_passport_number_masked"`
-	ExtractedDateOfBirth      *string `json:"extracted_date_of_birth"`
-	ExtractedExpiryDate       *string `json:"extracted_expiry_date"`
-	ExtractedCountryCode      *string `json:"extracted_country_code"`
+	ExtractedDateOfBirth       *string `json:"extracted_date_of_birth"`
+	ExtractedExpiryDate        *string `json:"extracted_expiry_date"`
+	ExtractedCountryCode       *string `json:"extracted_country_code"`
 }
 
 type AddStampRequest struct {

@@ -9,14 +9,14 @@ import (
 type WishlistCategory string
 
 const (
-	CategoryRestaurant  WishlistCategory = "restaurant"
-	CategoryHotel       WishlistCategory = "hotel"
-	CategoryAttraction  WishlistCategory = "attraction"
-	CategoryCafe        WishlistCategory = "cafe"
-	CategoryNightlife   WishlistCategory = "nightlife"
-	CategoryNature      WishlistCategory = "nature"
-	CategoryMuseum      WishlistCategory = "museum"
-	CategoryShopping    WishlistCategory = "shopping"
+	CategoryRestaurant WishlistCategory = "restaurant"
+	CategoryHotel      WishlistCategory = "hotel"
+	CategoryAttraction WishlistCategory = "attraction"
+	CategoryCafe       WishlistCategory = "cafe"
+	CategoryNightlife  WishlistCategory = "nightlife"
+	CategoryNature     WishlistCategory = "nature"
+	CategoryMuseum     WishlistCategory = "museum"
+	CategoryShopping   WishlistCategory = "shopping"
 )
 
 type WishlistItem struct {
@@ -52,10 +52,6 @@ type WishlistCollectionItem struct {
 }
 
 func (WishlistCollectionItem) TableName() string { return "wishlist_collection_items" }
-
-// ---------------------------------------------------------------------------
-// DTOs
-// ---------------------------------------------------------------------------
 
 type CreateItemRequest struct {
 	Name          string           `json:"name"           binding:"required"`

@@ -14,7 +14,11 @@ type Service interface {
 	AcceptChallenge(userID uuid.UUID, req *AcceptChallengeRequest) (*UserChallengeProgress, error)
 	CompleteChallenge(userID uuid.UUID, req *CompleteChallengeRequest) (*UserChallengeProgress, error)
 	GetMyProgress(userID uuid.UUID) ([]UserChallengeProgress, error)
-	CreateChallenge(req *CreateChallengeRequest) (*Challenge, error) // admin use
+	CreateChallenge(req *CreateChallengeRequest) (*Challenge, error)
+	GetLeaderboard(limit int) ([]LeaderboardEntry, error)
+	ListTrivia(limit int) ([]TriviaQuestion, error)
+	CreateTriviaQuestion(req *CreateTriviaQuestionRequest) (*TriviaQuestion, error)
+	AnswerTrivia(userID uuid.UUID, req *AnswerTriviaRequest) (*TriviaAttempt, error)
 }
 
 type service struct {
@@ -83,11 +87,10 @@ func (s *service) CompleteChallenge(userID uuid.UUID, req *CompleteChallengeRequ
 		return nil, err
 	}
 
-	// Award points to vibe profile
 	vp, err := s.userRepo.GetVibeProfile(userID)
 	if err == nil {
 		vp.RoamifyPoints += challenge.Points
-		// Award XP / level up (every 500 points = next level)
+
 		newLevel := (vp.RoamifyPoints / 500) + 1
 		if newLevel > vp.ExplorerLevel {
 			vp.ExplorerLevel = newLevel
@@ -112,4 +115,83 @@ func (s *service) CreateChallenge(req *CreateChallengeRequest) (*Challenge, erro
 		IsActive:    true,
 	}
 	return c, s.repo.CreateChallenge(c)
+}
+
+func (s *service) GetLeaderboard(limit int) ([]LeaderboardEntry, error) {
+	profiles, err := s.userRepo.ListTopVibeProfiles(limit)
+	if err != nil {
+		return nil, err
+	}
+	entries := make([]LeaderboardEntry, 0, len(profiles))
+	for _, vp := range profiles {
+		u, userErr := s.userRepo.FindByID(vp.UserID)
+		if userErr != nil || u == nil {
+			continue
+		}
+		entries = append(entries, LeaderboardEntry{
+			UserID:           u.ID,
+			FullName:         u.FullName,
+			AvatarURL:        u.AvatarURL,
+			ExplorerLevel:    vp.ExplorerLevel,
+			RoamifyPoints:    vp.RoamifyPoints,
+			CountriesVisited: vp.CountriesVisited,
+		})
+	}
+	return entries, nil
+}
+
+func (s *service) ListTrivia(limit int) ([]TriviaQuestion, error) {
+	return s.repo.FindActiveTrivia(limit)
+}
+
+func (s *service) CreateTriviaQuestion(req *CreateTriviaQuestionRequest) (*TriviaQuestion, error) {
+	points := req.Points
+	if points <= 0 {
+		points = 50
+	}
+	q := &TriviaQuestion{
+		Question:      req.Question,
+		Choices:       req.Choices,
+		CorrectAnswer: req.CorrectAnswer,
+		Points:        points,
+		IsActive:      true,
+	}
+	if err := s.repo.CreateTriviaQuestion(q); err != nil {
+		return nil, err
+	}
+	return q, nil
+}
+
+func (s *service) AnswerTrivia(userID uuid.UUID, req *AnswerTriviaRequest) (*TriviaAttempt, error) {
+	question, err := s.repo.FindTriviaByID(req.QuestionID)
+	if err != nil {
+		return nil, errors.New("trivia question not found")
+	}
+	correct := req.Answer == question.CorrectAnswer
+	awarded := 0
+	if correct {
+		awarded = question.Points
+	}
+	attempt := &TriviaAttempt{
+		UserID:           userID,
+		TriviaQuestionID: req.QuestionID,
+		SelectedAnswer:   req.Answer,
+		IsCorrect:        correct,
+		AwardedPoints:    awarded,
+	}
+	if err := s.repo.CreateTriviaAttempt(attempt); err != nil {
+		return nil, err
+	}
+	if awarded > 0 {
+		vp, vpErr := s.userRepo.GetVibeProfile(userID)
+		if vpErr == nil {
+			vp.RoamifyPoints += awarded
+			newLevel := (vp.RoamifyPoints / 500) + 1
+			if newLevel > vp.ExplorerLevel {
+				vp.ExplorerLevel = newLevel
+			}
+			_ = s.userRepo.UpsertVibeProfile(vp)
+		}
+	}
+	return attempt, nil
 }

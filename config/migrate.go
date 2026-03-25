@@ -14,33 +14,32 @@ import (
 
 func AutoMigrate() {
 	err := DB.AutoMigrate(
-		// Users & identity
+
 		&users.User{},
 		&users.VibeProfile{},
+		&users.UserFollow{},
+		&users.UserPrivacySetting{},
 		&notifications.UserNotificationSetting{},
 
-		// Trips
 		&trips.Trip{},
 		&trips.TripMember{},
 		&trips.TripItineraryItem{},
 		&trips.TripExpense{},
 		&trips.ChatMessage{},
 
-		// Social
 		&posts.Post{},
 		&posts.PostTag{},
 		&posts.PostLike{},
 
-		// Wishlist
 		&wishlist.WishlistItem{},
 		&wishlist.WishlistCollection{},
 		&wishlist.WishlistCollectionItem{},
 
-		// Gamification
 		&challenges.Challenge{},
 		&challenges.UserChallengeProgress{},
+		&challenges.TriviaQuestion{},
+		&challenges.TriviaAttempt{},
 
-		// Passport
 		&passport.PassportVaultRecord{},
 		&passport.PassportStamp{},
 	)
