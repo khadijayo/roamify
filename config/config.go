@@ -11,6 +11,7 @@ import (
 
 type Config struct {
 	Port           string
+	DatabaseURL    string
 	DBHost         string
 	DBPort         string
 	DBUser         string
@@ -33,6 +34,7 @@ func Load() {
 
 	App = &Config{
 		Port:           getEnv("PORT", "8080"),
+		DatabaseURL:    getEnv("DATABASE_URL", ""),
 		DBHost:         getEnv("DB_HOST", "localhost"),
 		DBPort:         getEnv("DB_PORT", "5432"),
 		DBUser:         getEnv("DB_USER", "postgres"),
@@ -46,6 +48,9 @@ func Load() {
 }
 
 func (c *Config) DSN() string {
+	if c.DatabaseURL != "" {
+		return c.DatabaseURL
+	}
 	return fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=UTC",
 		c.DBHost, c.DBPort, c.DBUser, c.DBPassword, c.DBName, c.DBSSLMode,
