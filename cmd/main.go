@@ -90,9 +90,6 @@ func main() {
 		r.GET("/swagger", func(c *gin.Context) {
 			c.Redirect(http.StatusFound, "/swagger/index.html")
 		})
-		r.GET("/swagger/", func(c *gin.Context) {
-			c.Redirect(http.StatusFound, "/swagger/index.html")
-		})
 		r.Static("/swagger", swaggerDir)
 	}
 
