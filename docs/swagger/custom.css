@@ -1,0 +1,33 @@
+body {
+  margin: 0;
+  background: #fafafa;
+}
+
+#swagger-ui {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+#swagger-error {
+  display: none;
+  max-width: 920px;
+  margin: 24px auto;
+  padding: 16px;
+  border: 1px solid #f5c2c7;
+  background: #f8d7da;
+  color: #842029;
+  font-family: sans-serif;
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+
+.noscript-note {
+  max-width: 920px;
+  margin: 24px auto;
+  padding: 16px;
+  border: 1px solid #ffe69c;
+  background: #fff3cd;
+  color: #664d03;
+  font-family: sans-serif;
+  border-radius: 8px;
+}
