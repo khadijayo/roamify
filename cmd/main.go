@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/khadijayo/roamify/config"
@@ -71,10 +74,27 @@ func main() {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "roamify-api"})
 	})
-	r.GET("/swagger", func(c *gin.Context) {
-		c.Redirect(302, "/swagger/index.html")
-	})
-	r.Static("/swagger", "./docs/swagger")
+	swaggerDir, err := resolveSwaggerDir()
+	if err != nil {
+		log.Printf("[swagger] static assets unavailable: %v", err)
+		r.GET("/swagger", func(c *gin.Context) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"error": "swagger assets not found on server",
+			})
+		})
+		r.GET("/swagger/*any", func(c *gin.Context) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "swagger assets not found"})
+		})
+	} else {
+		log.Printf("[swagger] serving static docs from %s", swaggerDir)
+		r.GET("/swagger", func(c *gin.Context) {
+			c.Redirect(http.StatusFound, "/swagger/index.html")
+		})
+		r.GET("/swagger/", func(c *gin.Context) {
+			c.Redirect(http.StatusFound, "/swagger/index.html")
+		})
+		r.Static("/swagger", swaggerDir)
+	}
 
 	api := r.Group("/api/v1")
 	wireModules(api)
@@ -84,6 +104,42 @@ func main() {
 	if err := r.Run(addr); err != nil {
 		log.Fatalf("[roamify] server failed: %v", err)
 	}
+}
+
+func resolveSwaggerDir() (string, error) {
+	var candidates []string
+
+	if wd, err := os.Getwd(); err == nil {
+		candidates = append(candidates,
+			filepath.Join(wd, "docs", "swagger"),
+			filepath.Join(wd, "..", "docs", "swagger"),
+		)
+	}
+
+	if exePath, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exePath)
+		candidates = append(candidates,
+			filepath.Join(exeDir, "docs", "swagger"),
+			filepath.Join(exeDir, "..", "docs", "swagger"),
+			filepath.Join(exeDir, "..", "..", "docs", "swagger"),
+		)
+	}
+
+	seen := map[string]struct{}{}
+	for _, candidate := range candidates {
+		clean := filepath.Clean(candidate)
+		if _, ok := seen[clean]; ok {
+			continue
+		}
+		seen[clean] = struct{}{}
+
+		info, err := os.Stat(clean)
+		if err == nil && info.IsDir() {
+			return clean, nil
+		}
+	}
+
+	return "", fmt.Errorf("docs/swagger directory not found in runtime paths")
 }
 
 func wireModules(api *gin.RouterGroup) {
