@@ -8,21 +8,80 @@
   <style>
     body { margin: 0; background: #fafafa; }
     #swagger-ui { max-width: 1200px; margin: 0 auto; }
+    #swagger-error {
+      display: none;
+      max-width: 920px;
+      margin: 24px auto;
+      padding: 16px;
+      border: 1px solid #f5c2c7;
+      background: #f8d7da;
+      color: #842029;
+      font-family: sans-serif;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
+  <div id="swagger-error"></div>
   <div id="swagger-ui"></div>
-  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
   <script>
-    window.onload = function () {
-      window.ui = SwaggerUIBundle({
-        url: '/swagger/openapi.json',
-        dom_id: '#swagger-ui',
-        deepLinking: true,
-        presets: [SwaggerUIBundle.presets.apis],
-        layout: 'BaseLayout'
+    const swaggerSources = [
+      'https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js',
+      'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js'
+    ];
+
+    function showError(message) {
+      const el = document.getElementById('swagger-error');
+      el.style.display = 'block';
+      el.textContent = message;
+    }
+
+    function loadScript(url) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = url;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.body.appendChild(s);
       });
-    };
+    }
+
+    async function loadSwaggerBundle() {
+      for (const src of swaggerSources) {
+        try {
+          await loadScript(src);
+          return;
+        } catch (_) {
+          // Try next CDN endpoint.
+        }
+      }
+      throw new Error('Could not load Swagger UI bundle from CDN.');
+    }
+
+    async function boot() {
+      try {
+        await loadSwaggerBundle();
+        if (typeof SwaggerUIBundle !== 'function') {
+          throw new Error('Swagger UI library failed to initialize.');
+        }
+        window.ui = SwaggerUIBundle({
+          url: 'openapi.json',
+          dom_id: '#swagger-ui',
+          deepLinking: true,
+          presets: [SwaggerUIBundle.presets.apis],
+          layout: 'BaseLayout'
+        });
+      } catch (err) {
+        showError(
+          'Swagger UI failed to load.\n' +
+          'Reason: ' + (err && err.message ? err.message : String(err)) + '\n\n' +
+          'You can still fetch the spec JSON directly at /swagger/openapi.json.'
+        );
+      }
+    }
+
+    window.onload = boot;
   </script>
 </body>
 </html>
