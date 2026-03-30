@@ -66,3 +66,20 @@ type AssistantResponse struct {
 	RoutePlan      []string `json:"route_plan"`
 	NextActivities []string `json:"next_activities"`
 }
+
+type OnboardingAnswersRequest struct {
+	ExplorerType   string   `json:"explorer_type"`
+	PreferredVibes []string `json:"preferred_vibes"`
+	Interests      []string `json:"interests"`
+	BudgetStyle    string   `json:"budget_style"`
+	TravelPace     string   `json:"travel_pace"`
+	TravelWith     string   `json:"travel_with"`
+	DesiredRegion  string   `json:"desired_region"`
+	MaxBudget      float64  `json:"max_budget"`
+	TripLengthDays int      `json:"trip_length_days"`
+}
+
+type GenerateLocationsRequest struct {
+	Answers OnboardingAnswersRequest `json:"answers" binding:"required"`
+	Limit   int                      `json:"limit"`
+}

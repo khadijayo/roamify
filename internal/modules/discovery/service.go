@@ -21,6 +21,7 @@ type Service interface {
 	VibeSearch(query string) (*VibeSearchResponse, error)
 	GetAtlasLocations(filter *AtlasFilterRequest) ([]DiscoveryLocation, error)
 	GetLocation(id uuid.UUID) (*DiscoveryLocation, error)
+	GenerateLocationsFromAnswers(req *GenerateLocationsRequest) ([]DiscoveryLocation, error)
 	GlobalSearch(query string) (*GlobalSearchResponse, error)
 	TravelAssistant(req *AssistantRequest) (*AssistantResponse, error)
 }
@@ -43,14 +44,14 @@ var seededFlights = []PriceDropItem{
 // -------------------- SERVICE IMPLEMENTATION --------------------
 
 type realService struct {
-	grokKey  string
+	grokKey    string
 	httpClient *http.Client
 }
 
 // Constructor (matches your main.go)
 func NewService(grokKey string) Service {
 	return &realService{
-		grokKey:  grokKey,
+		grokKey:    grokKey,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
 }
@@ -119,6 +120,28 @@ func (s *realService) GetLocation(id uuid.UUID) (*DiscoveryLocation, error) {
 		}
 	}
 	return nil, nil
+}
+
+func (s *realService) GenerateLocationsFromAnswers(req *GenerateLocationsRequest) ([]DiscoveryLocation, error) {
+	if req == nil {
+		return nil, errors.New("request is required")
+	}
+
+	limit := req.Limit
+	if limit <= 0 {
+		limit = 6
+	}
+
+	if limit > len(seededLocations) {
+		limit = len(seededLocations)
+	}
+
+	results := make([]DiscoveryLocation, 0, limit)
+	for i := 0; i < limit; i++ {
+		results = append(results, seededLocations[i])
+	}
+
+	return results, nil
 }
 
 func (s *realService) GlobalSearch(query string) (*GlobalSearchResponse, error) {

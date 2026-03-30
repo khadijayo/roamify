@@ -1,21 +1,21 @@
 package discovery
 
 import (
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	
+
 	"github.com/khadijayo/roamify/pkg/middleware"
 	"github.com/khadijayo/roamify/pkg/response"
 )
 
 type Handler struct {
-	svc Service
-	 personalizedSvc *PersonalizedService 
+	svc             Service
+	personalizedSvc *PersonalizedService
 }
 
- func NewHandler(svc Service, personalizedSvc *PersonalizedService) *Handler {
-       return &Handler{svc: svc, personalizedSvc: personalizedSvc}
-  }
+func NewHandler(svc Service, personalizedSvc *PersonalizedService) *Handler {
+	return &Handler{svc: svc, personalizedSvc: personalizedSvc}
+}
 
 func (h *Handler) GetHomeDashboard(c *gin.Context) {
 	data, err := h.svc.GetHomeDashboard()
@@ -117,9 +117,25 @@ func (h *Handler) GetRecommended(c *gin.Context) {
 // GET /discovery/atlas/geojson
 // Returns the atlas locations as a GeoJSON FeatureCollection.
 // Pass this directly to Mapbox as a source:
-//   map.addSource('atlas', { type: 'geojson', data: response.data })
+//
+//	map.addSource('atlas', { type: 'geojson', data: response.data })
 func (h *Handler) GetAtlasGeoJSON(c *gin.Context) {
 	fc := GetAtlasGeoJSON()
 	c.JSON(200, fc)
 }
 
+func (h *Handler) GenerateLocationsFromAnswers(c *gin.Context) {
+	var req GenerateLocationsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	data, err := h.svc.GenerateLocationsFromAnswers(&req)
+	if err != nil {
+		response.InternalError(c, err.Error())
+		return
+	}
+
+	response.OK(c, "generated discovery locations", data)
+}
