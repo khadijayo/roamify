@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	pkgjwt "github.com/khadijayo/roamify/pkg/jwt"
+	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -24,8 +25,8 @@ type Service interface {
 	GetFollowing(userID uuid.UUID) ([]User, error)
 	GetPrivacySettings(userID uuid.UUID) (*UserPrivacySetting, error)
 	UpdatePrivacySettings(userID uuid.UUID, req *UpdatePrivacySettingsRequest) (*UserPrivacySetting, error)
-    GetPublicProfile(userID uuid.UUID) (*User, error)
-    SearchUsers(query string) ([]User, error)
+	GetPublicProfile(userID uuid.UUID) (*User, error)
+	SearchUsers(query string) ([]User, error)
 }
 
 type service struct {
@@ -190,7 +191,7 @@ func (s *service) UpsertVibeProfile(userID uuid.UUID, req *UpdateVibeProfileRequ
 		vp.ExplorerType = req.ExplorerType
 	}
 	if req.PreferredVibes != nil {
-		vp.PreferredVibes = req.PreferredVibes
+		vp.PreferredVibes = pq.StringArray(req.PreferredVibes)
 	}
 	if req.TravelPace != "" {
 		vp.TravelPace = req.TravelPace
@@ -202,7 +203,7 @@ func (s *service) UpsertVibeProfile(userID uuid.UUID, req *UpdateVibeProfileRequ
 		vp.TravelWith = req.TravelWith
 	}
 	if req.Interests != nil {
-		vp.Interests = req.Interests
+		vp.Interests = pq.StringArray(req.Interests)
 	}
 	if req.OnboardingComplete != nil {
 		vp.OnboardingComplete = *req.OnboardingComplete

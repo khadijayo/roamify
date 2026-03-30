@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/khadijayo/roamify/internal/modules/users"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -151,7 +152,7 @@ func (s *service) CreateTriviaQuestion(req *CreateTriviaQuestionRequest) (*Trivi
 	}
 	q := &TriviaQuestion{
 		Question:      req.Question,
-		Choices:       req.Choices,
+		Choices:       pq.StringArray(req.Choices),
 		CorrectAnswer: req.CorrectAnswer,
 		Points:        points,
 		IsActive:      true,

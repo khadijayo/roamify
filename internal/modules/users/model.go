@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -73,20 +74,20 @@ const (
 )
 
 type VibeProfile struct {
-	ID                 uuid.UUID   `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	UserID             uuid.UUID   `gorm:"type:uuid;uniqueIndex;not null"                 json:"user_id"`
-	ExplorerType       string      `gorm:"type:varchar(100)"                              json:"explorer_type"`
-	PreferredVibes     []string    `gorm:"type:text[]"                                    json:"preferred_vibes"`
-	TravelPace         TravelPace  `gorm:"type:varchar(20)"                               json:"travel_pace"`
-	BudgetStyle        BudgetStyle `gorm:"type:varchar(20)"                               json:"budget_style"`
-	TravelWith         TravelWith  `gorm:"type:varchar(20)"                               json:"travel_with"`
-	Interests          []string    `gorm:"type:text[]"                                    json:"interests"`
-	OnboardingComplete bool        `gorm:"default:false"                                  json:"onboarding_complete"`
-	ExplorerLevel      int         `gorm:"default:1"                                      json:"explorer_level"`
-	RoamifyPoints      int         `gorm:"default:0"                                      json:"roamify_points"`
-	CountriesVisited   int         `gorm:"default:0"                                      json:"countries_visited"`
-	CreatedAt          time.Time   `                                                      json:"created_at"`
-	UpdatedAt          time.Time   `                                                      json:"updated_at"`
+	ID                 uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	UserID             uuid.UUID      `gorm:"type:uuid;uniqueIndex;not null"                 json:"user_id"`
+	ExplorerType       string         `gorm:"type:varchar(100)"                              json:"explorer_type"`
+	PreferredVibes     pq.StringArray `gorm:"type:text[]"                                 json:"preferred_vibes"`
+	TravelPace         TravelPace     `gorm:"type:varchar(20)"                               json:"travel_pace"`
+	BudgetStyle        BudgetStyle    `gorm:"type:varchar(20)"                               json:"budget_style"`
+	TravelWith         TravelWith     `gorm:"type:varchar(20)"                               json:"travel_with"`
+	Interests          pq.StringArray `gorm:"type:text[]"                                 json:"interests"`
+	OnboardingComplete bool           `gorm:"default:false"                                  json:"onboarding_complete"`
+	ExplorerLevel      int            `gorm:"default:1"                                      json:"explorer_level"`
+	RoamifyPoints      int            `gorm:"default:0"                                      json:"roamify_points"`
+	CountriesVisited   int            `gorm:"default:0"                                      json:"countries_visited"`
+	CreatedAt          time.Time      `                                                      json:"created_at"`
+	UpdatedAt          time.Time      `                                                      json:"updated_at"`
 }
 
 type RegisterRequest struct {

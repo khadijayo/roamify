@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type ChallengeCategory string
@@ -51,14 +52,14 @@ type UserChallengeProgress struct {
 }
 
 type TriviaQuestion struct {
-	ID            uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	Question      string    `gorm:"type:text;not null"                             json:"question"`
-	Choices       []string  `gorm:"type:text[]"                                    json:"choices"`
-	CorrectAnswer string    `gorm:"type:varchar(255);not null"                     json:"-"`
-	Points        int       `gorm:"default:50"                                     json:"points"`
-	IsActive      bool      `gorm:"default:true"                                   json:"is_active"`
-	CreatedAt     time.Time `                                                      json:"created_at"`
-	UpdatedAt     time.Time `                                                      json:"updated_at"`
+	ID            uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	Question      string         `gorm:"type:text;not null"                             json:"question"`
+	Choices       pq.StringArray `gorm:"type:text[]"                               json:"choices"`
+	CorrectAnswer string         `gorm:"type:varchar(255);not null"                     json:"-"`
+	Points        int            `gorm:"default:50"                                     json:"points"`
+	IsActive      bool           `gorm:"default:true"                                   json:"is_active"`
+	CreatedAt     time.Time      `                                                      json:"created_at"`
+	UpdatedAt     time.Time      `                                                      json:"updated_at"`
 }
 
 type TriviaAttempt struct {

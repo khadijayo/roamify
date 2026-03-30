@@ -30,9 +30,9 @@ type Service interface {
 	UpdateExpense(expenseID, requesterID uuid.UUID, req *UpdateExpenseRequest) (*TripExpense, error)
 	DeleteExpense(expenseID, requesterID uuid.UUID) error
 
-	 GetChatHistory(tripID uuid.UUID, limit int) ([]ChatMessage, error)
-	 SendChatMessage(tripID, userID uuid.UUID, message string) (*ChatMessage, error)
-	 GetTripMapPins(tripID uuid.UUID) ([]MapPin, error)
+	GetChatHistory(tripID uuid.UUID, limit int) ([]ChatMessage, error)
+	SendChatMessage(tripID, userID uuid.UUID, message string) (*ChatMessage, error)
+	GetTripMapPins(tripID uuid.UUID) ([]MapPin, error)
 }
 
 type service struct {
@@ -44,28 +44,28 @@ func NewService(repo Repository) Service {
 }
 
 func (s *service) isMember(tripID, userID uuid.UUID) bool {
-	m, err := s.repo.FindMember(tripID, userID)
-	if err == nil {
-		return m.JoinStatus == JoinStatusJoined
-	}
-
 	trip, tripErr := s.repo.FindTripByID(tripID)
 	if tripErr == nil && trip.OwnerUserID == userID {
 		return true
+	}
+
+	m, err := s.repo.FindMember(tripID, userID)
+	if err == nil {
+		return m.JoinStatus == JoinStatusJoined
 	}
 
 	return false
 }
 
 func (s *service) isOwnerOrAdmin(tripID, userID uuid.UUID) bool {
-	m, err := s.repo.FindMember(tripID, userID)
-	if err == nil {
-		return m.Role == RoleOwner || m.Role == RoleAdmin
-	}
-
 	trip, tripErr := s.repo.FindTripByID(tripID)
 	if tripErr == nil && trip.OwnerUserID == userID {
 		return true
+	}
+
+	m, err := s.repo.FindMember(tripID, userID)
+	if err == nil {
+		return m.Role == RoleOwner || m.Role == RoleAdmin
 	}
 
 	return false
