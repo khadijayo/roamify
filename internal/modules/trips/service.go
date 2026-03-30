@@ -29,6 +29,10 @@ type Service interface {
 	GetExpenses(tripID uuid.UUID) ([]TripExpense, error)
 	UpdateExpense(expenseID, requesterID uuid.UUID, req *UpdateExpenseRequest) (*TripExpense, error)
 	DeleteExpense(expenseID, requesterID uuid.UUID) error
+
+	 GetChatHistory(tripID uuid.UUID, limit int) ([]ChatMessage, error)
+	 SendChatMessage(tripID, userID uuid.UUID, message string) (*ChatMessage, error)
+	 GetTripMapPins(tripID uuid.UUID) ([]MapPin, error)
 }
 
 type service struct {
@@ -408,4 +412,30 @@ func (s *service) DeleteExpense(expenseID, requesterID uuid.UUID) error {
 		_ = s.repo.UpdateTrip(trip)
 	}
 	return nil
+}
+
+func (s *service) GetChatHistory(tripID uuid.UUID, limit int) ([]ChatMessage, error) {
+	if limit < 1 || limit > 200 {
+		limit = 50
+	}
+	return s.repo.FindChatMessages(tripID, limit)
+}
+
+func (s *service) SendChatMessage(tripID, userID uuid.UUID, message string) (*ChatMessage, error) {
+	if message == "" {
+		return nil, errors.New("message cannot be empty")
+	}
+	// Any joined member can send a message — owner check not required for chat.
+	if !s.isMember(tripID, userID) {
+		return nil, errors.New("only trip members can send messages")
+	}
+	msg := &ChatMessage{
+		TripID:  tripID,
+		UserID:  userID,
+		Message: message,
+	}
+	if err := s.repo.CreateChatMessage(msg); err != nil {
+		return nil, err
+	}
+	return msg, nil
 }

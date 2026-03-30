@@ -137,3 +137,7 @@ type UpdatePrivacySettingsRequest struct {
 	DataSharingEnabled *bool   `json:"data_sharing_enabled"`
 	MapVisibility      *string `json:"map_visibility"`
 }
+
+type SearchUsersRequest struct {
+	Q string `form:"q"`
+}

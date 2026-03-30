@@ -13,6 +13,7 @@ type Service interface {
 	CreatePost(authorID uuid.UUID, req *CreatePostRequest) (*Post, error)
 	GetPost(id uuid.UUID) (*Post, error)
 	GetFeed(page, pageSize int) ([]Post, *response.Meta, error)
+	GetFeedForUser(viewerID uuid.UUID, page, pageSize int) ([]Post, *response.Meta, error)
 	GetUserPosts(authorID uuid.UUID, page, pageSize int) ([]Post, *response.Meta, error)
 	UpdatePost(postID, authorID uuid.UUID, req *UpdatePostRequest) (*Post, error)
 	DeletePost(postID, authorID uuid.UUID) error
@@ -66,6 +67,27 @@ func (s *service) GetFeed(page, pageSize int) ([]Post, *response.Meta, error) {
 	}
 	offset := (page - 1) * pageSize
 	posts, total, err := s.repo.FindFeed(pageSize, offset)
+	if err != nil {
+		return nil, nil, err
+	}
+	meta := &response.Meta{
+		Page:       page,
+		PageSize:   pageSize,
+		TotalItems: total,
+		TotalPages: int(math.Ceil(float64(total) / float64(pageSize))),
+	}
+	return posts, meta, nil
+}
+
+func (s *service) GetFeedForUser(viewerID uuid.UUID, page, pageSize int) ([]Post, *response.Meta, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 50 {
+		pageSize = 20
+	}
+	offset := (page - 1) * pageSize
+	posts, total, err := s.repo.FindFeedForUser(viewerID, pageSize, offset)
 	if err != nil {
 		return nil, nil, err
 	}

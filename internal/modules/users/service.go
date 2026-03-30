@@ -24,6 +24,8 @@ type Service interface {
 	GetFollowing(userID uuid.UUID) ([]User, error)
 	GetPrivacySettings(userID uuid.UUID) (*UserPrivacySetting, error)
 	UpdatePrivacySettings(userID uuid.UUID, req *UpdatePrivacySettingsRequest) (*UserPrivacySetting, error)
+    GetPublicProfile(userID uuid.UUID) (*User, error)
+    SearchUsers(query string) ([]User, error)
 }
 
 type service struct {
@@ -309,4 +311,13 @@ func (s *service) UpdatePrivacySettings(userID uuid.UUID, req *UpdatePrivacySett
 		return nil, err
 	}
 	return settings, nil
+}
+
+func (s *service) GetPublicProfile(userID uuid.UUID) (*User, error) {
+	// Re-uses existing repo.FindByID — no new DB logic needed.
+	return s.repo.FindByID(userID)
+}
+
+func (s *service) SearchUsers(query string) ([]User, error) {
+	return s.repo.SearchUsers(query, 20)
 }

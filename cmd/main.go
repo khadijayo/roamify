@@ -23,57 +23,25 @@ import (
 func main() {
 
 	config.Load()
-
 	config.ConnectDB()
+	config.AutoMigrate()
 
-	db := config.DB
-	err := db.AutoMigrate(
-
-		&users.User{},
-		&users.VibeProfile{},
-		&users.UserFollow{},
-		&users.UserPrivacySetting{},
-		&notifications.UserNotificationSetting{},
-
-		&trips.Trip{},
-		&trips.TripMember{},
-		&trips.TripItineraryItem{},
-		&trips.TripExpense{},
-		&trips.ChatMessage{},
-
-		&posts.Post{},
-		&posts.PostTag{},
-		&posts.PostLike{},
-
-		&wishlist.WishlistItem{},
-		&wishlist.WishlistCollection{},
-		&wishlist.WishlistCollectionItem{},
-
-		&challenges.Challenge{},
-		&challenges.UserChallengeProgress{},
-		&challenges.TriviaQuestion{},
-		&challenges.TriviaAttempt{},
-
-		&passport.PassportVaultRecord{},
-		&passport.PassportStamp{},
-	)
-	if err != nil {
-		log.Fatalf("[migrate] AutoMigrate failed: %v", err)
-	}
-	log.Println("[migrate] all tables migrated successfully")
-
+	// 4. Gin release mode in production
 	if config.App.AppEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+	// 5. Router with recovery, logging, and CORS
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(middleware.Logger())
 	r.Use(middleware.CORS())
 
+	// 6. Health check endpoint — used by Railway/Render to confirm the server is up
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "roamify-api"})
 	})
+
 	swaggerDir, err := resolveSwaggerDir()
 	if err != nil {
 		log.Printf("[swagger] static assets unavailable: %v", err)
@@ -93,15 +61,25 @@ func main() {
 		r.Static("/swagger", swaggerDir)
 	}
 
+
+	// 7. Swagger UI (static files in ./docs/swagger/)
+	r.GET("/swagger", func(c *gin.Context) {
+		c.Redirect(302, "/swagger/index.html")
+	})
+	r.Static("/swagger", "./docs/swagger")
+
+	// 8. All module routes under /api/v1
 	api := r.Group("/api/v1")
 	wireModules(api)
 
+	// 9. Start server
 	addr := fmt.Sprintf(":%s", config.App.Port)
 	log.Printf("[roamify] server starting on %s (env: %s)", addr, config.App.AppEnv)
 	if err := r.Run(addr); err != nil {
 		log.Fatalf("[roamify] server failed: %v", err)
 	}
 }
+
 
 func resolveSwaggerDir() (string, error) {
 	var candidates []string
@@ -141,49 +119,62 @@ func resolveSwaggerDir() (string, error) {
 
 func wireModules(api *gin.RouterGroup) {
 	db := config.DB
+	auth := middleware.Auth(config.App.JWTSecret)
 
-	authMiddleware := middleware.Auth(config.App.JWTSecret)
-
+	// ---- Users ----
 	userRepo := users.NewRepository(db)
-	userSvc := users.NewService(
-		userRepo,
-		config.App.JWTSecret,
-		config.App.JWTExpiryHours,
-	)
+	userSvc := users.NewService(userRepo, config.App.JWTSecret, config.App.JWTExpiryHours)
 	userHandler := users.NewHandler(userSvc)
-	users.RegisterRoutes(api, userHandler, authMiddleware)
+	users.RegisterRoutes(api, userHandler, auth)
 
-	notifRepo := notifications.NewRepository(db)
-	notifSvc := notifications.NewService(notifRepo)
-	notifHandler := notifications.NewHandler(notifSvc)
-	notifications.RegisterRoutes(api, notifHandler, authMiddleware)
+	// ---- Notification settings (toggles: trip reminders, squad updates, price drops) ----
+	notifSettingsRepo := notifications.NewSettingsRepository(db)
+	notifSettingsSvc := notifications.NewSettingsService(notifSettingsRepo)
+	notifSettingsHandler := notifications.NewSettingsHandler(notifSettingsSvc)
+	notifications.RegisterSettingsRoutes(api, notifSettingsHandler, auth)
 
+	// ---- In-app notifications (inbox, unread count, mark read) ----
+	notifRepo := notifications.NewNotificationRepository(db)
+	notifSvc := notifications.NewNotificationService(notifRepo)
+	notifHandler := notifications.NewNotificationHandler(notifSvc)
+	notifications.RegisterNotificationRoutes(api, notifHandler, auth)
+
+	// ---- Trips (CRUD, squad, blueprint, treasury, chat, map pins) ----
 	tripRepo := trips.NewRepository(db)
 	tripSvc := trips.NewService(tripRepo)
 	tripHandler := trips.NewHandler(tripSvc)
-	trips.RegisterRoutes(api, tripHandler, authMiddleware)
+	trips.RegisterRoutes(api, tripHandler, auth)
 
+	// ---- Posts (feed, likes, user grid) ----
 	postRepo := posts.NewRepository(db)
 	postSvc := posts.NewService(postRepo)
 	postHandler := posts.NewHandler(postSvc)
-	posts.RegisterRoutes(api, postHandler, authMiddleware)
+	posts.RegisterRoutes(api, postHandler, auth)
 
+	// ---- Wishlist (spots, collections) ----
 	wishlistRepo := wishlist.NewRepository(db)
 	wishlistSvc := wishlist.NewService(wishlistRepo)
 	wishlistHandler := wishlist.NewHandler(wishlistSvc)
-	wishlist.RegisterRoutes(api, wishlistHandler, authMiddleware)
+	wishlist.RegisterRoutes(api, wishlistHandler, auth)
 
+	// ---- Challenges & gamification (leaderboard, trivia) ----
 	challengeRepo := challenges.NewRepository(db)
 	challengeSvc := challenges.NewService(challengeRepo, userRepo)
 	challengeHandler := challenges.NewHandler(challengeSvc)
-	challenges.RegisterRoutes(api, challengeHandler, authMiddleware)
+	challenges.RegisterRoutes(api, challengeHandler, auth)
 
+	// ---- Passport (vault, stamps) ----
 	passportRepo := passport.NewRepository(db)
 	passportSvc := passport.NewService(passportRepo, userRepo)
 	passportHandler := passport.NewHandler(passportSvc)
-	passport.RegisterRoutes(api, passportHandler, authMiddleware)
+	passport.RegisterRoutes(api, passportHandler, auth)
 
-	discoverySvc := discovery.NewService()
-	discoveryHandler := discovery.NewHandler(discoverySvc)
-	discovery.RegisterRoutes(api, discoveryHandler, authMiddleware)
+	// ---- Discovery (home, atlas, search, price drops, Gemini AI assistant) ----
+	personalizedSvc := discovery.NewPersonalizedService(userRepo)
+	discoverySvc := discovery.NewService(config.App.GeminiKey)
+	discoveryHandler := discovery.NewHandler(discoverySvc, personalizedSvc)
+	discovery.RegisterRoutes(api, discoveryHandler, auth)
+
+	fmt.Println("Registering user routes...")
 }
+

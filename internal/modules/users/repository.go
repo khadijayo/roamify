@@ -23,6 +23,7 @@ type Repository interface {
 	CountFollowing(userID uuid.UUID) (int64, error)
 	GetPrivacySettings(userID uuid.UUID) (*UserPrivacySetting, error)
 	UpsertPrivacySettings(settings *UserPrivacySetting) error
+	SearchUsers(query string, limit int) ([]User, error)
 }
 
 type repository struct {
@@ -132,4 +133,17 @@ func (r *repository) GetPrivacySettings(userID uuid.UUID) (*UserPrivacySetting, 
 
 func (r *repository) UpsertPrivacySettings(settings *UserPrivacySetting) error {
 	return r.db.Save(settings).Error
+}
+
+func (r *repository) SearchUsers(query string, limit int) ([]User, error) {
+	if limit < 1 || limit > 50 {
+		limit = 20
+	}
+	var users []User
+	err := r.db.
+		Where("full_name ILIKE ? OR email ILIKE ?", "%"+query+"%", "%"+query+"%").
+		Where("deleted_at IS NULL").
+		Limit(limit).
+		Find(&users).Error
+	return users, err
 }

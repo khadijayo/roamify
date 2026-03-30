@@ -12,34 +12,45 @@ import (
 	"github.com/khadijayo/roamify/internal/modules/wishlist"
 )
 
+// AutoMigrate creates or updates all tables from Go struct definitions.
+// GORM only adds missing columns — it never drops them.
+// Safe to call on every startup.
 func AutoMigrate() {
 	err := DB.AutoMigrate(
-
+		// Users & identity
 		&users.User{},
 		&users.VibeProfile{},
 		&users.UserFollow{},
 		&users.UserPrivacySetting{},
-		&notifications.UserNotificationSetting{},
 
+		// Notifications: settings toggles + in-app inbox
+		&notifications.UserNotificationSetting{},
+		&notifications.Notification{},
+
+		// Trips
 		&trips.Trip{},
 		&trips.TripMember{},
 		&trips.TripItineraryItem{},
 		&trips.TripExpense{},
 		&trips.ChatMessage{},
 
+		// Social
 		&posts.Post{},
 		&posts.PostTag{},
 		&posts.PostLike{},
 
+		// Wishlist / vault
 		&wishlist.WishlistItem{},
 		&wishlist.WishlistCollection{},
 		&wishlist.WishlistCollectionItem{},
 
+		// Gamification
 		&challenges.Challenge{},
 		&challenges.UserChallengeProgress{},
 		&challenges.TriviaQuestion{},
 		&challenges.TriviaAttempt{},
 
+		// Passport
 		&passport.PassportVaultRecord{},
 		&passport.PassportStamp{},
 	)

@@ -21,6 +21,7 @@ type Config struct {
 	JWTSecret      string
 	JWTExpiryHours int
 	AppEnv         string
+	GeminiKey      string
 }
 
 var App *Config
@@ -29,9 +30,7 @@ func Load() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("[config] no .env file found, reading from environment")
 	}
-
 	expiry, _ := strconv.Atoi(getEnv("JWT_EXPIRY_HOURS", "72"))
-
 	App = &Config{
 		Port:           getEnv("PORT", "8080"),
 		DatabaseURL:    getEnv("DATABASE_URL", ""),
@@ -44,6 +43,7 @@ func Load() {
 		JWTSecret:      getEnv("JWT_SECRET", "change-me-in-production"),
 		JWTExpiryHours: expiry,
 		AppEnv:         getEnv("APP_ENV", "development"),
+		GeminiKey:      getEnv("GEMINI_KEY", ""),
 	}
 }
 

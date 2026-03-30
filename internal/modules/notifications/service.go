@@ -1,62 +1,75 @@
 package notifications
 
 import (
-	"errors"
+	"math"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
+	"github.com/khadijayo/roamify/pkg/response"
 )
 
-type Service interface {
-	GetSettings(userID uuid.UUID) (*UserNotificationSetting, error)
-	UpdateSettings(userID uuid.UUID, req *UpdateNotificationSettingsRequest) (*UserNotificationSetting, error)
+// NotificationService handles the in-app notification inbox.
+// Call Fire() from any other service to create a notification.
+
+type NotificationService interface {
+	Fire(input *CreateNotificationInput) error
+	List(userID uuid.UUID, page, pageSize int) ([]Notification, *response.Meta, error)
+	UnreadCount(userID uuid.UUID) (int64, error)
+	MarkRead(notifID, userID uuid.UUID) error
+	MarkAllRead(userID uuid.UUID) error
 }
 
-type service struct {
-	repo Repository
+type notificationService struct {
+	repo NotificationRepository
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo: repo}
+func NewNotificationService(repo NotificationRepository) NotificationService {
+	return &notificationService{repo: repo}
 }
 
-func (s *service) GetSettings(userID uuid.UUID) (*UserNotificationSetting, error) {
-	settings, err := s.repo.FindByUser(userID)
+// Fire creates a notification. Called internally — not from HTTP.
+// Example: notifSvc.Fire(&CreateNotificationInput{UserID: id, Type: NotifTripInvite, Title: "You were invited!"})
+func (s *notificationService) Fire(input *CreateNotificationInput) error {
+	n := &Notification{
+		UserID:  input.UserID,
+		Type:    input.Type,
+		Title:   input.Title,
+		Body:    input.Body,
+		RefID:   input.RefID,
+		RefType: input.RefType,
+		IsRead:  false,
+	}
+	return s.repo.Create(n)
+}
+
+func (s *notificationService) List(userID uuid.UUID, page, pageSize int) ([]Notification, *response.Meta, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 30
+	}
+	offset := (page - 1) * pageSize
+	items, total, err := s.repo.FindByUser(userID, pageSize, offset)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-
-			defaults := &UserNotificationSetting{
-				UserID:                 userID,
-				TripRemindersEnabled:   true,
-				SquadUpdatesEnabled:    true,
-				PriceDropAlertsEnabled: false,
-			}
-			if err := s.repo.UpsertSettings(defaults); err != nil {
-				return nil, err
-			}
-			return defaults, nil
-		}
-		return nil, err
+		return nil, nil, err
 	}
-	return settings, nil
+	meta := &response.Meta{
+		Page:       page,
+		PageSize:   pageSize,
+		TotalItems: total,
+		TotalPages: int(math.Ceil(float64(total) / float64(pageSize))),
+	}
+	return items, meta, nil
 }
 
-func (s *service) UpdateSettings(userID uuid.UUID, req *UpdateNotificationSettingsRequest) (*UserNotificationSetting, error) {
-	settings, err := s.GetSettings(userID)
-	if err != nil {
-		return nil, err
-	}
-	if req.TripRemindersEnabled != nil {
-		settings.TripRemindersEnabled = *req.TripRemindersEnabled
-	}
-	if req.SquadUpdatesEnabled != nil {
-		settings.SquadUpdatesEnabled = *req.SquadUpdatesEnabled
-	}
-	if req.PriceDropAlertsEnabled != nil {
-		settings.PriceDropAlertsEnabled = *req.PriceDropAlertsEnabled
-	}
-	if err := s.repo.UpsertSettings(settings); err != nil {
-		return nil, err
-	}
-	return settings, nil
+func (s *notificationService) UnreadCount(userID uuid.UUID) (int64, error) {
+	return s.repo.FindUnreadCount(userID)
+}
+
+func (s *notificationService) MarkRead(notifID, userID uuid.UUID) error {
+	return s.repo.MarkRead(notifID, userID)
+}
+
+func (s *notificationService) MarkAllRead(userID uuid.UUID) error {
+	return s.repo.MarkAllRead(userID)
 }

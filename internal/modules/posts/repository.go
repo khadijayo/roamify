@@ -9,6 +9,7 @@ type Repository interface {
 	CreatePost(post *Post) error
 	FindPostByID(id uuid.UUID) (*Post, error)
 	FindFeed(limit, offset int) ([]Post, int64, error)
+	FindFeedForUser(viewerID uuid.UUID, limit, offset int) ([]Post, int64, error) 
 	FindByAuthor(authorID uuid.UUID, limit, offset int) ([]Post, int64, error)
 	UpdatePost(post *Post) error
 	DeletePost(id uuid.UUID) error
@@ -105,3 +106,30 @@ func (r *repository) IncrementLikes(postID uuid.UUID) error {
 func (r *repository) DecrementLikes(postID uuid.UUID) error {
 	return r.db.Model(&Post{}).Where("id = ?", postID).UpdateColumn("likes_count", gorm.Expr("GREATEST(likes_count - 1, 0)")).Error
 }
+
+func (r *repository) FindFeedForUser(viewerID uuid.UUID, limit, offset int) ([]Post, int64, error) {
+	var posts []Post
+	var count int64
+
+	// Count query
+	r.db.Model(&Post{}).
+		Where(
+			"visibility = ? OR (visibility = ? AND author_user_id IN (SELECT following_id FROM user_follows WHERE follower_id = ?))",
+			VisibilityPublic, VisibilityFollowers, viewerID,
+		).
+		Count(&count)
+
+	// Fetch query
+	err := r.db.Preload("Tags").
+		Where(
+			"visibility = ? OR (visibility = ? AND author_user_id IN (SELECT following_id FROM user_follows WHERE follower_id = ?))",
+			VisibilityPublic, VisibilityFollowers, viewerID,
+		).
+		Order("created_at DESC").
+		Limit(limit).Offset(offset).
+		Find(&posts).Error
+
+	return posts, count, err
+}
+
+

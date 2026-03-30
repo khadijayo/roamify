@@ -1,40 +1,70 @@
 package notifications
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/khadijayo/roamify/pkg/middleware"
 	"github.com/khadijayo/roamify/pkg/response"
 )
 
-type Handler struct {
-	svc Service
+// NotificationHandler serves the in-app notification inbox endpoints.
+
+type NotificationHandler struct {
+	svc NotificationService
 }
 
-func NewHandler(svc Service) *Handler {
-	return &Handler{svc: svc}
+func NewNotificationHandler(svc NotificationService) *NotificationHandler {
+	return &NotificationHandler{svc: svc}
 }
 
-func (h *Handler) GetSettings(c *gin.Context) {
+// GET /notifications?page=1&page_size=30
+func (h *NotificationHandler) List(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	settings, err := h.svc.GetSettings(userID)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "30"))
+	items, meta, err := h.svc.List(userID, page, pageSize)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
 	}
-	response.OK(c, "notification settings fetched", settings)
+	response.OKPaginated(c, "notifications fetched", items, meta)
 }
 
-func (h *Handler) UpdateSettings(c *gin.Context) {
+// GET /notifications/unread-count
+// Returns {"count": N} — drives the bell badge dot in the app.
+func (h *NotificationHandler) UnreadCount(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	var req UpdateNotificationSettingsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-	settings, err := h.svc.UpdateSettings(userID, &req)
+	count, err := h.svc.UnreadCount(userID)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
 	}
-	response.OK(c, "notification settings updated", settings)
+	response.OK(c, "unread count", gin.H{"count": count})
+}
+
+// PATCH /notifications/:notifId/read
+func (h *NotificationHandler) MarkRead(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	notifID, err := uuid.Parse(c.Param("notifId"))
+	if err != nil {
+		response.BadRequest(c, "invalid notification id")
+		return
+	}
+	if err := h.svc.MarkRead(notifID, userID); err != nil {
+		response.InternalError(c, err.Error())
+		return
+	}
+	response.OK(c, "notification marked as read", nil)
+}
+
+// PATCH /notifications/read-all
+func (h *NotificationHandler) MarkAllRead(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	if err := h.svc.MarkAllRead(userID); err != nil {
+		response.InternalError(c, err.Error())
+		return
+	}
+	response.OK(c, "all notifications marked as read", nil)
 }

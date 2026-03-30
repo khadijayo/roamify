@@ -32,16 +32,18 @@ func (h *Handler) CreatePost(c *gin.Context) {
 	response.Created(c, "post created", post)
 }
 
-func (h *Handler) GetFeed(c *gin.Context) {
+func (h *Handler) GetFeedV2(c *gin.Context) {
+	viewerID := middleware.GetUserID(c)
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-	posts, meta, err := h.svc.GetFeed(page, pageSize)
+	posts, meta, err := h.svc.GetFeedForUser(viewerID, page, pageSize)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
 	}
 	response.OKPaginated(c, "feed fetched", posts, meta)
 }
+
 
 func (h *Handler) GetPost(c *gin.Context) {
 	postID, err := uuid.Parse(c.Param("postId"))

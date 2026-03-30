@@ -27,5 +27,9 @@ func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
 		trips.GET("/:tripId/expenses", h.GetExpenses)
 		trips.PATCH("/:tripId/expenses/:expenseId", h.UpdateExpense)
 		trips.DELETE("/:tripId/expenses/:expenseId", h.DeleteExpense)
+
+		trips.GET("/:tripId/chat", h.GetChatHistory)        // squad chat history
+        trips.POST("/:tripId/chat", h.SendChatMessage)       // send chat message
+        trips.GET("/:tripId/map", h.GetTripMapPins)  
 	}
 }

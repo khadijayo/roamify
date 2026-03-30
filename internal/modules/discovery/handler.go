@@ -1,18 +1,21 @@
 package discovery
 
 import (
-	"github.com/gin-gonic/gin"
+    "github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	
+	"github.com/khadijayo/roamify/pkg/middleware"
 	"github.com/khadijayo/roamify/pkg/response"
 )
 
 type Handler struct {
 	svc Service
+	 personalizedSvc *PersonalizedService 
 }
 
-func NewHandler(svc Service) *Handler {
-	return &Handler{svc: svc}
-}
+ func NewHandler(svc Service, personalizedSvc *PersonalizedService) *Handler {
+       return &Handler{svc: svc, personalizedSvc: personalizedSvc}
+  }
 
 func (h *Handler) GetHomeDashboard(c *gin.Context) {
 	data, err := h.svc.GetHomeDashboard()
@@ -85,3 +88,38 @@ func (h *Handler) TravelAssistant(c *gin.Context) {
 	}
 	response.OK(c, "assistant response generated", data)
 }
+
+// GET /discovery/price-drops
+// Returns price drop alerts personalised to the authenticated user's vibe profile.
+// Falls back to all deals if the user has no vibe profile yet.
+func (h *Handler) GetPersonalizedPriceDrops(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	deals, err := h.personalizedSvc.GetPersonalizedPriceDrops(userID)
+	if err != nil {
+		response.InternalError(c, err.Error())
+		return
+	}
+	response.OK(c, "price drops fetched", deals)
+}
+
+// GET /discovery/recommended
+// Returns destinations ranked by how closely they match the user's interests/vibes.
+func (h *Handler) GetRecommended(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	locs, err := h.personalizedSvc.RecommendedDestinations(userID)
+	if err != nil {
+		response.InternalError(c, err.Error())
+		return
+	}
+	response.OK(c, "recommended destinations fetched", locs)
+}
+
+// GET /discovery/atlas/geojson
+// Returns the atlas locations as a GeoJSON FeatureCollection.
+// Pass this directly to Mapbox as a source:
+//   map.addSource('atlas', { type: 'geojson', data: response.data })
+func (h *Handler) GetAtlasGeoJSON(c *gin.Context) {
+	fc := GetAtlasGeoJSON()
+	c.JSON(200, fc)
+}
+

@@ -31,6 +31,9 @@ type Repository interface {
 	UpdateExpense(expense *TripExpense) error
 	DeleteExpense(id uuid.UUID) error
 	SumExpensesByTrip(tripID uuid.UUID) (float64, error)
+
+	FindChatMessages(tripID uuid.UUID, limit int) ([]ChatMessage, error)
+	CreateChatMessage(msg *ChatMessage) error
 }
 
 type repository struct {
@@ -161,4 +164,18 @@ func (r *repository) SumExpensesByTrip(tripID uuid.UUID) (float64, error) {
 		Select("COALESCE(SUM(amount), 0)").
 		Scan(&total).Error
 	return total, err
+}
+
+func (r *repository) FindChatMessages(tripID uuid.UUID, limit int) ([]ChatMessage, error) {
+	var msgs []ChatMessage
+	err := r.db.
+		Where("trip_id = ?", tripID).
+		Order("created_at ASC").
+		Limit(limit).
+		Find(&msgs).Error
+	return msgs, err
+}
+
+func (r *repository) CreateChatMessage(msg *ChatMessage) error {
+	return r.db.Create(msg).Error
 }

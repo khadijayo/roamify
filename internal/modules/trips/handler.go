@@ -1,6 +1,7 @@
 package trips
 
 import (
+	"strconv"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/khadijayo/roamify/pkg/middleware"
@@ -296,4 +297,55 @@ func (h *Handler) DeleteExpense(c *gin.Context) {
 		return
 	}
 	response.OK(c, "expense deleted", nil)
+}
+
+func (h *Handler) GetChatHistory(c *gin.Context) {
+	tripID, err := uuid.Parse(c.Param("tripId"))
+	if err != nil {
+		response.BadRequest(c, "invalid trip id")
+		return
+	}
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	msgs, err := h.svc.GetChatHistory(tripID, limit)
+	if err != nil {
+		response.InternalError(c, err.Error())
+		return
+	}
+	response.OK(c, "chat history fetched", msgs)
+}
+
+func (h *Handler) SendChatMessage(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	tripID, err := uuid.Parse(c.Param("tripId"))
+	if err != nil {
+		response.BadRequest(c, "invalid trip id")
+		return
+	}
+	var body struct {
+		Message string `json:"message" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	msg, err := h.svc.SendChatMessage(tripID, userID, body.Message)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	response.Created(c, "message sent", msg)
+}
+
+func (h *Handler) GetTripMapPins(c *gin.Context) {
+	tripID, err := uuid.Parse(c.Param("tripId"))
+	if err != nil {
+		response.BadRequest(c, "invalid trip id")
+		return
+	}
+	pins, err := h.svc.GetTripMapPins(tripID)
+	if err != nil {
+		response.InternalError(c, err.Error())
+		return
+	}
+	response.OK(c, "map pins fetched", pins)
 }
