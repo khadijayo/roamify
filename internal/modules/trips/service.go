@@ -45,15 +45,30 @@ func NewService(repo Repository) Service {
 
 func (s *service) isMember(tripID, userID uuid.UUID) bool {
 	m, err := s.repo.FindMember(tripID, userID)
-	return err == nil && (m.JoinStatus == JoinStatusJoined)
+	if err == nil {
+		return m.JoinStatus == JoinStatusJoined
+	}
+
+	trip, tripErr := s.repo.FindTripByID(tripID)
+	if tripErr == nil && trip.OwnerUserID == userID {
+		return true
+	}
+
+	return false
 }
 
 func (s *service) isOwnerOrAdmin(tripID, userID uuid.UUID) bool {
 	m, err := s.repo.FindMember(tripID, userID)
-	if err != nil {
-		return false
+	if err == nil {
+		return m.Role == RoleOwner || m.Role == RoleAdmin
 	}
-	return m.Role == RoleOwner || m.Role == RoleAdmin
+
+	trip, tripErr := s.repo.FindTripByID(tripID)
+	if tripErr == nil && trip.OwnerUserID == userID {
+		return true
+	}
+
+	return false
 }
 
 func (s *service) CreateTrip(ownerID uuid.UUID, req *CreateTripRequest) (*Trip, error) {

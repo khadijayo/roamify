@@ -76,11 +76,11 @@ type VibeProfile struct {
 	ID                 uuid.UUID   `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	UserID             uuid.UUID   `gorm:"type:uuid;uniqueIndex;not null"                 json:"user_id"`
 	ExplorerType       string      `gorm:"type:varchar(100)"                              json:"explorer_type"`
-	PreferredVibes     []string    `gorm:"type:text[];serializer:json"                    json:"preferred_vibes"`
+	PreferredVibes     []string    `gorm:"type:text[]"                                    json:"preferred_vibes"`
 	TravelPace         TravelPace  `gorm:"type:varchar(20)"                               json:"travel_pace"`
 	BudgetStyle        BudgetStyle `gorm:"type:varchar(20)"                               json:"budget_style"`
 	TravelWith         TravelWith  `gorm:"type:varchar(20)"                               json:"travel_with"`
-	Interests          []string    `gorm:"type:text[];serializer:json"                    json:"interests"`
+	Interests          []string    `gorm:"type:text[]"                                    json:"interests"`
 	OnboardingComplete bool        `gorm:"default:false"                                  json:"onboarding_complete"`
 	ExplorerLevel      int         `gorm:"default:1"                                      json:"explorer_level"`
 	RoamifyPoints      int         `gorm:"default:0"                                      json:"roamify_points"`

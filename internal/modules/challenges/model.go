@@ -53,7 +53,7 @@ type UserChallengeProgress struct {
 type TriviaQuestion struct {
 	ID            uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	Question      string    `gorm:"type:text;not null"                             json:"question"`
-	Choices       []string  `gorm:"type:text[];serializer:json"                    json:"choices"`
+	Choices       []string  `gorm:"type:text[]"                                    json:"choices"`
 	CorrectAnswer string    `gorm:"type:varchar(255);not null"                     json:"-"`
 	Points        int       `gorm:"default:50"                                     json:"points"`
 	IsActive      bool      `gorm:"default:true"                                   json:"is_active"`
