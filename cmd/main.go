@@ -184,7 +184,7 @@ func wireModules(api *gin.RouterGroup) {
 	passport.RegisterRoutes(api, passportHandler, auth)
 
 	personalizedSvc := discovery.NewPersonalizedService(userRepo)
-	discoverySvc := discovery.NewService(config.App.GeminiKey)
+	discoverySvc := discovery.NewService(config.App.GrokKey)
 	discoveryHandler := discovery.NewHandler(discoverySvc, personalizedSvc)
 	discovery.RegisterRoutes(api, discoveryHandler, auth)
 

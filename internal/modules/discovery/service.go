@@ -43,14 +43,14 @@ var seededFlights = []PriceDropItem{
 // -------------------- SERVICE IMPLEMENTATION --------------------
 
 type realService struct {
-	geminiKey  string
+	grokKey  string
 	httpClient *http.Client
 }
 
 // Constructor (matches your main.go)
-func NewService(geminiKey string) Service {
+func NewService(grokKey string) Service {
 	return &realService{
-		geminiKey:  geminiKey,
+		grokKey:  grokKey,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
 }
@@ -139,10 +139,10 @@ func (s *realService) GlobalSearch(query string) (*GlobalSearchResponse, error) 
 	}, nil
 }
 
-// -------------------- GEMINI AI --------------------
+// -------------------- GROK AI --------------------
 
 func (s *realService) TravelAssistant(req *AssistantRequest) (*AssistantResponse, error) {
-	if s.geminiKey == "" {
+	if s.grokKey == "" {
 		return &AssistantResponse{
 			Suggestion: "Start central, explore nearby, keep flexibility.",
 			RoutePlan:  []string{"Morning: Explore", "Afternoon: Activities", "Evening: Relax"},
@@ -158,28 +158,34 @@ func (s *realService) TravelAssistant(req *AssistantRequest) (*AssistantResponse
 	if req.Destination != "" {
 		prompt = fmt.Sprintf("Destination: %s\n%s", req.Destination, req.Prompt)
 	}
-
 	if len(req.Waypoints) > 0 {
 		prompt += "\nWaypoints: " + strings.Join(req.Waypoints, ", ")
 	}
 
 	prompt += "\nReturn ONLY JSON: {suggestion:string, route_plan:[], next_activities:[]}"
 
+	// ✅ GROK REQUEST FORMAT
 	bodyMap := map[string]interface{}{
-		"contents": []map[string]interface{}{
+		"model": "grok-beta",
+		"messages": []map[string]string{
 			{
-				"parts": []map[string]string{
-					{"text": prompt},
-				},
+				"role":    "user",
+				"content": prompt,
 			},
 		},
 	}
 
 	body, _ := json.Marshal(bodyMap)
 
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=%s", s.geminiKey)
+	// ✅ GROK URL
+	url := "https://api.x.ai/v1/chat/completions"
 
-	httpReq, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+
+	httpReq.Header.Set("Authorization", "Bearer "+s.grokKey)
 	httpReq.Header.Set("Content-Type", "application/json")
 
 	resp, err := s.httpClient.Do(httpReq)
@@ -189,26 +195,26 @@ func (s *realService) TravelAssistant(req *AssistantRequest) (*AssistantResponse
 	defer resp.Body.Close()
 
 	respBody, _ := io.ReadAll(resp.Body)
+	fmt.Println("GROK RAW RESPONSE:", string(respBody))
 
-	var geminiResp struct {
-		Candidates []struct {
-			Content struct {
-				Parts []struct {
-					Text string `json:"text"`
-				} `json:"parts"`
-			} `json:"content"`
-		} `json:"candidates"`
+	// ✅ GROK RESPONSE FORMAT
+	var grokResp struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
 	}
 
-	if err := json.Unmarshal(respBody, &geminiResp); err != nil {
+	if err := json.Unmarshal(respBody, &grokResp); err != nil {
 		return nil, err
 	}
 
-	if len(geminiResp.Candidates) == 0 {
-		return nil, errors.New("empty gemini response")
+	if len(grokResp.Choices) == 0 {
+		return nil, errors.New("empty grok response")
 	}
 
-	text := geminiResp.Candidates[0].Content.Parts[0].Text
+	text := grokResp.Choices[0].Message.Content
 
 	var result struct {
 		Suggestion     string   `json:"suggestion"`
@@ -216,8 +222,12 @@ func (s *realService) TravelAssistant(req *AssistantRequest) (*AssistantResponse
 		NextActivities []string `json:"next_activities"`
 	}
 
+	// Try structured parsing
 	if err := json.Unmarshal([]byte(text), &result); err != nil {
-		return &AssistantResponse{Suggestion: text}, nil
+		// fallback: return raw text
+		return &AssistantResponse{
+			Suggestion: text,
+		}, nil
 	}
 
 	return &AssistantResponse{
