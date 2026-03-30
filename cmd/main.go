@@ -61,13 +61,6 @@ func main() {
 		r.Static("/swagger", swaggerDir)
 	}
 
-
-	// 7. Swagger UI (static files in ./docs/swagger/)
-	r.GET("/swagger", func(c *gin.Context) {
-		c.Redirect(302, "/swagger/index.html")
-	})
-	r.Static("/swagger", "./docs/swagger")
-
 	// 8. All module routes under /api/v1
 	api := r.Group("/api/v1")
 	wireModules(api)
