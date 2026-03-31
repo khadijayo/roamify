@@ -28,6 +28,7 @@ type Service interface {
 
 	AddItineraryItem(tripID, userID uuid.UUID, req *CreateItineraryItemRequest) (*TripItineraryItem, error)
 	GenerateAndSaveAIItinerary(tripID, userID uuid.UUID, req *GenerateAIItineraryRequest) ([]TripItineraryItem, error)
+	PlanAndCreateTripWithAI(userID uuid.UUID, req *PlanAndCreateTripRequest) (*PlanAndCreateTripResponse, error)
 	GetItinerary(tripID uuid.UUID) ([]TripItineraryItem, error)
 	UpdateItineraryItem(itemID, requesterID uuid.UUID, req *UpdateItineraryItemRequest) (*TripItineraryItem, error)
 	DeleteItineraryItem(itemID, requesterID uuid.UUID) error
@@ -531,6 +532,57 @@ func (s *service) GenerateAndSaveAIItinerary(tripID, userID uuid.UUID, req *Gene
 	}
 
 	return created, nil
+}
+
+func (s *service) PlanAndCreateTripWithAI(userID uuid.UUID, req *PlanAndCreateTripRequest) (*PlanAndCreateTripResponse, error) {
+	if req.EndDate.Before(req.StartDate) {
+		return nil, errors.New("end_date must be after start_date")
+	}
+
+	tripTitle := strings.TrimSpace(req.Title)
+	if tripTitle == "" {
+		tripTitle = strings.TrimSpace(req.Location) + " Trip"
+	}
+
+	start := req.StartDate
+	end := req.EndDate
+	createReq := &CreateTripRequest{
+		Title:            tripTitle,
+		Destination:      req.Location,
+		TravelersPlanned: req.NumberOfPeople,
+		StartDate:        &start,
+		EndDate:          &end,
+		Budget:           req.Budget,
+	}
+
+	if strings.TrimSpace(req.Vibe) != "" {
+		createReq.VibeTags = []string{strings.TrimSpace(req.Vibe)}
+	}
+
+	trip, err := s.CreateTrip(userID, createReq)
+	if err != nil {
+		return nil, err
+	}
+
+	itReq := &GenerateAIItineraryRequest{
+		Location:       req.Location,
+		Vibe:           req.Vibe,
+		NumberOfPeople: req.NumberOfPeople,
+		StartDate:      req.StartDate,
+		EndDate:        req.EndDate,
+		Budget:         req.Budget,
+		Prompt:         req.Prompt,
+	}
+
+	items, err := s.GenerateAndSaveAIItinerary(trip.ID, userID, itReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PlanAndCreateTripResponse{
+		Trip:      trip,
+		Itinerary: items,
+	}, nil
 }
 
 func (s *service) generateActivities(req *GenerateAIItineraryRequest) ([]aiGeneratedActivity, error) {

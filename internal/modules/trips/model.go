@@ -193,3 +193,19 @@ type GenerateAIItineraryRequest struct {
 	Budget         float64   `json:"budget"`
 	Prompt         string    `json:"prompt"`
 }
+
+type PlanAndCreateTripRequest struct {
+	Title          string    `json:"title"`
+	Location       string    `json:"location" binding:"required"`
+	Vibe           string    `json:"vibe"`
+	NumberOfPeople int       `json:"number_of_people"`
+	StartDate      time.Time `json:"start_date" binding:"required"`
+	EndDate        time.Time `json:"end_date" binding:"required"`
+	Budget         float64   `json:"budget"`
+	Prompt         string    `json:"prompt"`
+}
+
+type PlanAndCreateTripResponse struct {
+	Trip      *Trip               `json:"trip"`
+	Itinerary []TripItineraryItem `json:"itinerary"`
+}

@@ -31,6 +31,23 @@ func (h *Handler) CreateTrip(c *gin.Context) {
 	response.Created(c, "trip created", trip)
 }
 
+func (h *Handler) PlanAndCreateTripWithAI(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	var req PlanAndCreateTripRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	data, err := h.svc.PlanAndCreateTripWithAI(userID, &req)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	response.Created(c, "trip planned with ai and saved", data)
+}
+
 func (h *Handler) GetMyTrips(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	trips, err := h.svc.GetMyTrips(userID)

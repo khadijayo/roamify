@@ -7,6 +7,7 @@ import (
 func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
 	trips := r.Group("/trips", auth)
 	{
+		trips.POST("/plan-and-create", h.PlanAndCreateTripWithAI)
 		trips.POST("/", h.CreateTrip)
 		trips.GET("/", h.GetMyTrips)
 		trips.GET("/:tripId", h.GetTrip)
