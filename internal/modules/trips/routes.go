@@ -19,6 +19,7 @@ func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
 		trips.DELETE("/:tripId/members/:userId", h.RemoveMember)
 
 		trips.POST("/:tripId/itinerary", h.AddItineraryItem)
+		trips.POST("/:tripId/itinerary/generate-ai", h.GenerateAIItinerary)
 		trips.GET("/:tripId/itinerary", h.GetItinerary)
 		trips.PATCH("/:tripId/itinerary/:itemId", h.UpdateItineraryItem)
 		trips.DELETE("/:tripId/itinerary/:itemId", h.DeleteItineraryItem)
@@ -28,8 +29,8 @@ func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
 		trips.PATCH("/:tripId/expenses/:expenseId", h.UpdateExpense)
 		trips.DELETE("/:tripId/expenses/:expenseId", h.DeleteExpense)
 
-		trips.GET("/:tripId/chat", h.GetChatHistory)        // squad chat history
-        trips.POST("/:tripId/chat", h.SendChatMessage)       // send chat message
-        trips.GET("/:tripId/map", h.GetTripMapPins)  
+		trips.GET("/:tripId/chat", h.GetChatHistory)   // squad chat history
+		trips.POST("/:tripId/chat", h.SendChatMessage) // send chat message
+		trips.GET("/:tripId/map", h.GetTripMapPins)
 	}
 }

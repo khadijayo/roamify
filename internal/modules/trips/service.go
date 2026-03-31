@@ -1,7 +1,13 @@
 package trips
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,6 +27,7 @@ type Service interface {
 	GetMembers(tripID uuid.UUID) ([]TripMember, error)
 
 	AddItineraryItem(tripID, userID uuid.UUID, req *CreateItineraryItemRequest) (*TripItineraryItem, error)
+	GenerateAndSaveAIItinerary(tripID, userID uuid.UUID, req *GenerateAIItineraryRequest) ([]TripItineraryItem, error)
 	GetItinerary(tripID uuid.UUID) ([]TripItineraryItem, error)
 	UpdateItineraryItem(itemID, requesterID uuid.UUID, req *UpdateItineraryItemRequest) (*TripItineraryItem, error)
 	DeleteItineraryItem(itemID, requesterID uuid.UUID) error
@@ -36,11 +43,17 @@ type Service interface {
 }
 
 type service struct {
-	repo Repository
+	repo       Repository
+	grokKey    string
+	httpClient *http.Client
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo: repo}
+func NewService(repo Repository, grokKey string) Service {
+	return &service{
+		repo:       repo,
+		grokKey:    grokKey,
+		httpClient: &http.Client{Timeout: 30 * time.Second},
+	}
 }
 
 func (s *service) isMember(tripID, userID uuid.UUID) bool {
@@ -261,11 +274,16 @@ func (s *service) AddItineraryItem(tripID, userID uuid.UUID, req *CreateItinerar
 	if !s.isMember(tripID, userID) {
 		return nil, errors.New("only trip members can add itinerary items")
 	}
+	peopleCount := req.PeopleCount
+	if peopleCount <= 0 {
+		peopleCount = 1
+	}
 	item := &TripItineraryItem{
 		TripID:          tripID,
 		DayNumber:       req.DayNumber,
 		Title:           req.Title,
 		ItemType:        req.ItemType,
+		PeopleCount:     peopleCount,
 		StartTime:       req.StartTime,
 		LocationName:    req.LocationName,
 		Notes:           req.Notes,
@@ -297,6 +315,9 @@ func (s *service) UpdateItineraryItem(itemID, requesterID uuid.UUID, req *Update
 	}
 	if req.ItemType != "" {
 		item.ItemType = req.ItemType
+	}
+	if req.PeopleCount > 0 {
+		item.PeopleCount = req.PeopleCount
 	}
 	if req.DayNumber > 0 {
 		item.DayNumber = req.DayNumber
@@ -427,6 +448,184 @@ func (s *service) DeleteExpense(expenseID, requesterID uuid.UUID) error {
 		_ = s.repo.UpdateTrip(trip)
 	}
 	return nil
+}
+
+type aiGeneratedActivity struct {
+	DayNumber    int      `json:"day_number"`
+	Title        string   `json:"title"`
+	ItemType     ItemType `json:"item_type"`
+	PeopleCount  int      `json:"people_count"`
+	StartTime    string   `json:"start_time"`
+	LocationName string   `json:"location_name"`
+	Notes        string   `json:"notes"`
+}
+
+func (s *service) GenerateAndSaveAIItinerary(tripID, userID uuid.UUID, req *GenerateAIItineraryRequest) ([]TripItineraryItem, error) {
+	if !s.isMember(tripID, userID) {
+		return nil, errors.New("only trip members can generate itinerary")
+	}
+	if req.EndDate.Before(req.StartDate) {
+		return nil, errors.New("end_date must be after start_date")
+	}
+
+	activities, err := s.generateActivities(req)
+	if err != nil {
+		return nil, err
+	}
+
+	created := make([]TripItineraryItem, 0, len(activities))
+	for i, a := range activities {
+		if strings.TrimSpace(a.Title) == "" {
+			continue
+		}
+
+		dayNumber := a.DayNumber
+		if dayNumber <= 0 {
+			dayNumber = 1
+		}
+
+		people := a.PeopleCount
+		if people <= 0 {
+			people = req.NumberOfPeople
+			if people <= 0 {
+				people = 1
+			}
+		}
+
+		itemType := a.ItemType
+		if itemType == "" {
+			itemType = ItemTypeActivity
+		}
+
+		var startTime *time.Time
+		if a.StartTime != "" {
+			if t, parseErr := time.Parse(time.RFC3339, a.StartTime); parseErr == nil {
+				startTime = &t
+			}
+		}
+
+		notes := strings.TrimSpace(a.Notes)
+		var notesPtr *string
+		if notes != "" {
+			notesCopy := notes
+			notesPtr = &notesCopy
+		}
+
+		item := &TripItineraryItem{
+			TripID:          tripID,
+			DayNumber:       dayNumber,
+			Title:           strings.TrimSpace(a.Title),
+			ItemType:        itemType,
+			PeopleCount:     people,
+			StartTime:       startTime,
+			LocationName:    strings.TrimSpace(a.LocationName),
+			Notes:           notesPtr,
+			SortOrder:       i + 1,
+			CreatedByUserID: &userID,
+		}
+
+		if err := s.repo.CreateItineraryItem(item); err != nil {
+			return nil, err
+		}
+		created = append(created, *item)
+	}
+
+	return created, nil
+}
+
+func (s *service) generateActivities(req *GenerateAIItineraryRequest) ([]aiGeneratedActivity, error) {
+	if s.grokKey == "" {
+		return fallbackActivities(req), nil
+	}
+
+	prompt := fmt.Sprintf("Generate a detailed travel itinerary as JSON array only. Location: %s. Vibe: %s. People: %d. Start: %s. End: %s. Budget: %.2f. %s\nEach item must include keys: day_number,title,item_type,people_count,start_time,location_name,notes. start_time must be RFC3339.",
+		req.Location,
+		req.Vibe,
+		req.NumberOfPeople,
+		req.StartDate.Format(time.RFC3339),
+		req.EndDate.Format(time.RFC3339),
+		req.Budget,
+		req.Prompt,
+	)
+
+	bodyMap := map[string]interface{}{
+		"model": "grok-beta",
+		"messages": []map[string]string{{
+			"role":    "user",
+			"content": prompt,
+		}},
+	}
+
+	body, _ := json.Marshal(bodyMap)
+	httpReq, err := http.NewRequest("POST", "https://api.x.ai/v1/chat/completions", bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+s.grokKey)
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.httpClient.Do(httpReq)
+	if err != nil {
+		return fallbackActivities(req), nil
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	var grokResp struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+
+	if err := json.Unmarshal(respBody, &grokResp); err != nil || len(grokResp.Choices) == 0 {
+		return fallbackActivities(req), nil
+	}
+
+	content := strings.TrimSpace(grokResp.Choices[0].Message.Content)
+	content = strings.TrimPrefix(content, "```json")
+	content = strings.TrimPrefix(content, "```")
+	content = strings.TrimSuffix(content, "```")
+	content = strings.TrimSpace(content)
+
+	var activities []aiGeneratedActivity
+	if err := json.Unmarshal([]byte(content), &activities); err != nil || len(activities) == 0 {
+		return fallbackActivities(req), nil
+	}
+
+	return activities, nil
+}
+
+func fallbackActivities(req *GenerateAIItineraryRequest) []aiGeneratedActivity {
+	people := req.NumberOfPeople
+	if people <= 0 {
+		people = 1
+	}
+
+	days := int(req.EndDate.Sub(req.StartDate).Hours()/24) + 1
+	if days < 1 {
+		days = 1
+	}
+	if days > 10 {
+		days = 10
+	}
+
+	activities := make([]aiGeneratedActivity, 0, days*3)
+	for d := 1; d <= days; d++ {
+		baseDate := req.StartDate.AddDate(0, 0, d-1)
+		morning := time.Date(baseDate.Year(), baseDate.Month(), baseDate.Day(), 9, 0, 0, 0, time.UTC)
+		afternoon := time.Date(baseDate.Year(), baseDate.Month(), baseDate.Day(), 13, 0, 0, 0, time.UTC)
+		evening := time.Date(baseDate.Year(), baseDate.Month(), baseDate.Day(), 18, 0, 0, 0, time.UTC)
+
+		activities = append(activities,
+			aiGeneratedActivity{DayNumber: d, Title: "Morning exploration", ItemType: ItemTypeActivity, PeopleCount: people, StartTime: morning.Format(time.RFC3339), LocationName: req.Location, Notes: "Walk key neighborhoods and landmarks."},
+			aiGeneratedActivity{DayNumber: d, Title: "Lunch stop", ItemType: ItemTypeFood, PeopleCount: people, StartTime: afternoon.Format(time.RFC3339), LocationName: req.Location, Notes: "Try highly rated local cuisine."},
+			aiGeneratedActivity{DayNumber: d, Title: "Evening highlight", ItemType: ItemTypeActivity, PeopleCount: people, StartTime: evening.Format(time.RFC3339), LocationName: req.Location, Notes: "Sunset activity and dinner area."},
+		)
+	}
+
+	return activities
 }
 
 func (s *service) GetChatHistory(tripID uuid.UUID, limit int) ([]ChatMessage, error) {

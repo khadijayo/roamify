@@ -1,11 +1,11 @@
 package trips
 
 import (
-	"strconv"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/khadijayo/roamify/pkg/middleware"
 	"github.com/khadijayo/roamify/pkg/response"
+	"strconv"
 )
 
 type Handler struct {
@@ -181,6 +181,29 @@ func (h *Handler) AddItineraryItem(c *gin.Context) {
 		return
 	}
 	response.Created(c, "itinerary item added", item)
+}
+
+func (h *Handler) GenerateAIItinerary(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	tripID, err := uuid.Parse(c.Param("tripId"))
+	if err != nil {
+		response.BadRequest(c, "invalid trip id")
+		return
+	}
+
+	var req GenerateAIItineraryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	items, err := h.svc.GenerateAndSaveAIItinerary(tripID, userID, &req)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	response.Created(c, "ai itinerary generated and saved", items)
 }
 
 func (h *Handler) GetItinerary(c *gin.Context) {

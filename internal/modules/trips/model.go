@@ -73,6 +73,7 @@ type TripItineraryItem struct {
 	DayNumber       int        `gorm:"not null"                                        json:"day_number"`
 	Title           string     `gorm:"type:varchar(255);not null"                      json:"title"`
 	ItemType        ItemType   `gorm:"type:varchar(50)"                                json:"item_type"`
+	PeopleCount     int        `gorm:"default:1"                                       json:"people_count"`
 	StartTime       *time.Time `gorm:"type:timestamp"                                  json:"start_time"`
 	LocationName    string     `gorm:"type:varchar(255)"                               json:"location_name"`
 	Notes           *string    `gorm:"type:text"                                       json:"notes"`
@@ -145,6 +146,7 @@ type CreateItineraryItemRequest struct {
 	DayNumber    int        `json:"day_number"    binding:"required"`
 	Title        string     `json:"title"         binding:"required"`
 	ItemType     ItemType   `json:"item_type"`
+	PeopleCount  int        `json:"people_count"`
 	StartTime    *time.Time `json:"start_time"`
 	LocationName string     `json:"location_name"`
 	Notes        *string    `json:"notes"`
@@ -157,6 +159,7 @@ type UpdateItineraryItemRequest struct {
 	DayNumber    int        `json:"day_number"`
 	Title        string     `json:"title"`
 	ItemType     ItemType   `json:"item_type"`
+	PeopleCount  int        `json:"people_count"`
 	StartTime    *time.Time `json:"start_time"`
 	LocationName string     `json:"location_name"`
 	Notes        *string    `json:"notes"`
@@ -179,4 +182,14 @@ type UpdateExpenseRequest struct {
 	Amount       float64   `json:"amount"`
 	ExpenseDate  time.Time `json:"expense_date"`
 	CurrencyCode string    `json:"currency_code"`
+}
+
+type GenerateAIItineraryRequest struct {
+	Location       string    `json:"location" binding:"required"`
+	Vibe           string    `json:"vibe"`
+	NumberOfPeople int       `json:"number_of_people"`
+	StartDate      time.Time `json:"start_date" binding:"required"`
+	EndDate        time.Time `json:"end_date" binding:"required"`
+	Budget         float64   `json:"budget"`
+	Prompt         string    `json:"prompt"`
 }

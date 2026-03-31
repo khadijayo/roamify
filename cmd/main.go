@@ -159,7 +159,7 @@ func wireModules(api *gin.RouterGroup) {
 	notifications.RegisterNotificationRoutes(api, notifHandler, auth)
 
 	tripRepo := trips.NewRepository(db)
-	tripSvc := trips.NewService(tripRepo)
+	tripSvc := trips.NewService(tripRepo, config.App.GrokKey)
 	tripHandler := trips.NewHandler(tripSvc)
 	trips.RegisterRoutes(api, tripHandler, auth)
 
