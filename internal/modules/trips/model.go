@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -38,7 +39,7 @@ type Trip struct {
 	Title            string         `gorm:"type:varchar(255);not null"                     json:"title"`
 	Destination      string         `gorm:"type:varchar(255);not null"                     json:"destination"`
 	TripType         TripType       `gorm:"type:varchar(50)"                               json:"trip_type"`
-	VibeTags         []string       `gorm:"type:text[];serializer:json"                    json:"vibe_tags"`
+	VibeTags         pq.StringArray `gorm:"type:text[]"                                    json:"vibe_tags"`
 	TravelersPlanned int            `gorm:"default:1"                                      json:"travelers_planned"`
 	StartDate        *time.Time     `gorm:"type:timestamp"                                 json:"start_date"`
 	EndDate          *time.Time     `gorm:"type:timestamp"                                 json:"end_date"`

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -95,7 +96,7 @@ func (s *service) CreateTrip(ownerID uuid.UUID, req *CreateTripRequest) (*Trip, 
 		Title:            req.Title,
 		Destination:      req.Destination,
 		TripType:         req.TripType,
-		VibeTags:         req.VibeTags,
+		VibeTags:         pq.StringArray(req.VibeTags),
 		TravelersPlanned: travelers,
 		StartDate:        req.StartDate,
 		EndDate:          req.EndDate,
@@ -180,7 +181,7 @@ func (s *service) UpdateTrip(tripID, requesterID uuid.UUID, req *UpdateTripReque
 		trip.TripType = req.TripType
 	}
 	if req.VibeTags != nil {
-		trip.VibeTags = req.VibeTags
+		trip.VibeTags = pq.StringArray(req.VibeTags)
 	}
 	if req.TravelersPlanned > 0 {
 		trip.TravelersPlanned = req.TravelersPlanned
