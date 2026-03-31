@@ -360,6 +360,22 @@ func (s *service) AddExpense(tripID, userID uuid.UUID, req *CreateExpenseRequest
 	if !s.isMember(tripID, userID) {
 		return nil, errors.New("only trip members can log expenses")
 	}
+	description := strings.TrimSpace(req.Name)
+	if description == "" {
+		description = strings.TrimSpace(req.Description)
+	}
+	if description == "" {
+		return nil, errors.New("name is required")
+	}
+
+	amount := req.Cost
+	if amount <= 0 {
+		amount = req.Amount
+	}
+	if amount <= 0 {
+		return nil, errors.New("cost is required")
+	}
+
 	currency := req.CurrencyCode
 	if currency == "" {
 		currency = "USD"
@@ -367,9 +383,10 @@ func (s *service) AddExpense(tripID, userID uuid.UUID, req *CreateExpenseRequest
 	expense := &TripExpense{
 		TripID:          tripID,
 		CreatedByUserID: &userID,
-		Description:     req.Description,
+		Description:     description,
+		LocationName:    strings.TrimSpace(req.LocationName),
 		Category:        req.Category,
-		Amount:          req.Amount,
+		Amount:          amount,
 		ExpenseDate:     req.ExpenseDate,
 		CurrencyCode:    currency,
 	}
@@ -400,13 +417,20 @@ func (s *service) UpdateExpense(expenseID, requesterID uuid.UUID, req *UpdateExp
 			return nil, errors.New("not authorized to edit this expense")
 		}
 	}
-	if req.Description != "" {
-		expense.Description = req.Description
+	if strings.TrimSpace(req.Name) != "" {
+		expense.Description = strings.TrimSpace(req.Name)
+	} else if strings.TrimSpace(req.Description) != "" {
+		expense.Description = strings.TrimSpace(req.Description)
+	}
+	if strings.TrimSpace(req.LocationName) != "" {
+		expense.LocationName = strings.TrimSpace(req.LocationName)
 	}
 	if req.Category != "" {
 		expense.Category = req.Category
 	}
-	if req.Amount > 0 {
+	if req.Cost > 0 {
+		expense.Amount = req.Cost
+	} else if req.Amount > 0 {
 		expense.Amount = req.Amount
 	}
 	if !req.ExpenseDate.IsZero() {

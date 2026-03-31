@@ -90,6 +90,7 @@ type TripExpense struct {
 	TripID          uuid.UUID  `gorm:"type:uuid;not null;index"                       json:"trip_id"`
 	CreatedByUserID *uuid.UUID `gorm:"type:uuid;index"                                json:"created_by_user_id"`
 	Description     string     `gorm:"type:varchar(255);not null"                      json:"description"`
+	LocationName    string     `gorm:"type:varchar(255)"                               json:"location_name"`
 	Category        string     `gorm:"type:varchar(100)"                               json:"category"`
 	Amount          float64    `gorm:"type:numeric(12,2);not null"                     json:"amount"`
 	ExpenseDate     time.Time  `gorm:"type:date;not null"                              json:"expense_date"`
@@ -169,16 +170,22 @@ type UpdateItineraryItemRequest struct {
 }
 
 type CreateExpenseRequest struct {
-	Description  string    `json:"description"  binding:"required"`
+	Name         string    `json:"name"`
+	Description  string    `json:"description"`
+	LocationName string    `json:"location_name"`
 	Category     string    `json:"category"`
-	Amount       float64   `json:"amount"       binding:"required"`
+	Cost         float64   `json:"cost"`
+	Amount       float64   `json:"amount"`
 	ExpenseDate  time.Time `json:"expense_date" binding:"required"`
 	CurrencyCode string    `json:"currency_code"`
 }
 
 type UpdateExpenseRequest struct {
+	Name         string    `json:"name"`
 	Description  string    `json:"description"`
+	LocationName string    `json:"location_name"`
 	Category     string    `json:"category"`
+	Cost         float64   `json:"cost"`
 	Amount       float64   `json:"amount"`
 	ExpenseDate  time.Time `json:"expense_date"`
 	CurrencyCode string    `json:"currency_code"`
