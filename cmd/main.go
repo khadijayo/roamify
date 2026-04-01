@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-
+	
 	"github.com/gin-gonic/gin"
 	"github.com/khadijayo/roamify/config"
 	"github.com/khadijayo/roamify/internal/modules/challenges"
@@ -18,6 +18,9 @@ import (
 	"github.com/khadijayo/roamify/internal/modules/users"
 	"github.com/khadijayo/roamify/internal/modules/wishlist"
 	"github.com/khadijayo/roamify/pkg/middleware"
+	
+	"github.com/gin-contrib/cors"
+	"time"
 )
 
 func main() {
@@ -59,8 +62,19 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+	r := gin.Default()
+
+	// ✅ CORS middleware MUST be before routes
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // for testing only
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: false,
+		MaxAge: 12 * time.Hour,
+	}))
+
 	// 3. Create router with middleware
-	r := gin.New()
+	//r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(middleware.Logger())
 	r.Use(middleware.CORS())
@@ -104,6 +118,8 @@ func main() {
 	if err := r.Run(addr); err != nil {
 		log.Fatalf("[roamify] server failed: %v", err)
 	}
+
+	
 }
 
 // resolveSwaggerDir dynamically finds ./docs/swagger
