@@ -2,6 +2,7 @@ package users
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,6 +28,7 @@ type Service interface {
 	UpdatePrivacySettings(userID uuid.UUID, req *UpdatePrivacySettingsRequest) (*UserPrivacySetting, error)
 	GetPublicProfile(userID uuid.UUID) (*User, error)
 	SearchUsers(query string) ([]User, error)
+	VerifyEmail(token string) error
 }
 
 type service struct {
@@ -64,18 +66,27 @@ func (s *service) Register(req *RegisterRequest) (*AuthResponse, error) {
 		Email:        &email,
 		PasswordHash: &hashStr,
 		Status:       StatusActive,
+		IsVerified:   false,
 	}
 
 	if err := s.repo.CreateUser(user); err != nil {
 		return nil, err
 	}
 
-	token, err := pkgjwt.Generate(user.ID, req.Email, s.jwtSecret, s.jwtExpiryHours)
-	if err != nil {
+	tokenStr := uuid.New().String()
+	verificationToken := &VerificationToken{
+		UserID:    user.ID,
+		Token:     tokenStr,
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}
+	if err := s.repo.CreateVerificationToken(verificationToken); err != nil {
 		return nil, err
 	}
 
-	return &AuthResponse{Token: token, User: user}, nil
+	log.Printf("Verification email sent to %s with token: %s", *user.Email, tokenStr)
+
+	// Since the user is not verified yet, we do not return a JWT token.
+	return &AuthResponse{Token: "", User: user}, nil
 }
 
 func (s *service) Login(req *LoginRequest) (*AuthResponse, error) {
@@ -85,6 +96,9 @@ func (s *service) Login(req *LoginRequest) (*AuthResponse, error) {
 	}
 	if user.PasswordHash == nil {
 		return nil, errors.New("this account uses social login")
+	}
+	if !user.IsVerified {
+		return nil, errors.New("email not verified")
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(*user.PasswordHash), []byte(req.Password)); err != nil {
 		return nil, errors.New("invalid email or password")
@@ -321,4 +335,33 @@ func (s *service) GetPublicProfile(userID uuid.UUID) (*User, error) {
 
 func (s *service) SearchUsers(query string) ([]User, error) {
 	return s.repo.SearchUsers(query, 20)
+}
+
+func (s *service) VerifyEmail(token string) error {
+	vt, err := s.repo.FindVerificationToken(token)
+	if err != nil {
+		return errors.New("invalid or expired verification token")
+	}
+
+	if vt.UsedAt != nil {
+		return errors.New("token already used")
+	}
+
+	if time.Now().After(vt.ExpiresAt) {
+		return errors.New("token expired")
+	}
+
+	user, err := s.repo.FindByID(vt.UserID)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	user.IsVerified = true
+	if err := s.repo.UpdateUser(user); err != nil {
+		return err
+	}
+
+	now := time.Now()
+	vt.UsedAt = &now
+	return s.repo.UpdateVerificationToken(vt)
 }

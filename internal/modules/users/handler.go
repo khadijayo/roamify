@@ -45,6 +45,20 @@ func (h *Handler) Login(c *gin.Context) {
 	response.OK(c, "login successful", res)
 }
 
+// GET /auth/verify-email
+func (h *Handler) VerifyEmail(c *gin.Context) {
+	var req VerifyEmailRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.BadRequest(c, "invalid or missing token")
+		return
+	}
+	if err := h.svc.VerifyEmail(req.Token); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	response.OK(c, "email verified successfully", nil)
+}
+
 // GET /users/me
 func (h *Handler) GetMe(c *gin.Context) {
 	userID := middleware.GetUserID(c)
