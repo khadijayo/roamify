@@ -166,6 +166,7 @@ func (s *realService) GlobalSearch(query string) (*GlobalSearchResponse, error) 
 
 func (s *realService) TravelAssistant(req *AssistantRequest) (*AssistantResponse, error) {
 	if s.grokKey == "" {
+		fmt.Println("[TravelAssistant] WARNING: GROK_KEY is not set — returning mock fallback. Set GROK_KEY in your environment variables.")
 		return &AssistantResponse{
 			Suggestion: "Start central, explore nearby, keep flexibility.",
 			RoutePlan:  []string{"Morning: Explore", "Afternoon: Activities", "Evening: Relax"},
@@ -187,9 +188,8 @@ func (s *realService) TravelAssistant(req *AssistantRequest) (*AssistantResponse
 
 	prompt += "\nReturn ONLY JSON: {suggestion:string, route_plan:[], next_activities:[]}"
 
-	// ✅ GROK REQUEST FORMAT
 	bodyMap := map[string]interface{}{
-		"model": "grok-beta",
+		"model": "grok-3-fast",
 		"messages": []map[string]string{
 			{
 				"role":    "user",
@@ -200,7 +200,6 @@ func (s *realService) TravelAssistant(req *AssistantRequest) (*AssistantResponse
 
 	body, _ := json.Marshal(bodyMap)
 
-	// ✅ GROK URL
 	url := "https://api.x.ai/v1/chat/completions"
 
 	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
@@ -213,28 +212,41 @@ func (s *realService) TravelAssistant(req *AssistantRequest) (*AssistantResponse
 
 	resp, err := s.httpClient.Do(httpReq)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("grok request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	respBody, _ := io.ReadAll(resp.Body)
+	fmt.Println("GROK STATUS:", resp.StatusCode)
 	fmt.Println("GROK RAW RESPONSE:", string(respBody))
 
-	// ✅ GROK RESPONSE FORMAT
+	// Check for non-2xx HTTP status from xAI
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("grok API error (HTTP %d): %s", resp.StatusCode, string(respBody))
+	}
+
 	var grokResp struct {
 		Choices []struct {
 			Message struct {
 				Content string `json:"content"`
 			} `json:"message"`
 		} `json:"choices"`
+		Error *struct {
+			Message string `json:"message"`
+			Type    string `json:"type"`
+		} `json:"error"`
 	}
 
 	if err := json.Unmarshal(respBody, &grokResp); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("grok parse error: %w", err)
+	}
+
+	if grokResp.Error != nil {
+		return nil, fmt.Errorf("grok error (%s): %s", grokResp.Error.Type, grokResp.Error.Message)
 	}
 
 	if len(grokResp.Choices) == 0 {
-		return nil, errors.New("empty grok response")
+		return nil, fmt.Errorf("empty grok response — full body: %s", string(respBody))
 	}
 
 	text := grokResp.Choices[0].Message.Content

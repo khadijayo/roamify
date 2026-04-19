@@ -612,6 +612,7 @@ func (s *service) PlanAndCreateTripWithAI(userID uuid.UUID, req *PlanAndCreateTr
 
 func (s *service) generateActivities(req *GenerateAIItineraryRequest) ([]aiGeneratedActivity, error) {
 	if s.grokKey == "" {
+		fmt.Println("[generateActivities] WARNING: GROK_KEY is not set — returning mock fallback. Set GROK_KEY in your environment variables.")
 		return fallbackActivities(req), nil
 	}
 
@@ -626,7 +627,7 @@ func (s *service) generateActivities(req *GenerateAIItineraryRequest) ([]aiGener
 	)
 
 	bodyMap := map[string]interface{}{
-		"model": "grok-beta",
+		"model": "grok-3-fast",
 		"messages": []map[string]string{{
 			"role":    "user",
 			"content": prompt,
@@ -643,20 +644,39 @@ func (s *service) generateActivities(req *GenerateAIItineraryRequest) ([]aiGener
 
 	resp, err := s.httpClient.Do(httpReq)
 	if err != nil {
+		fmt.Println("[generateActivities] HTTP error:", err)
 		return fallbackActivities(req), nil
 	}
 	defer resp.Body.Close()
 
 	respBody, _ := io.ReadAll(resp.Body)
+	fmt.Println("[generateActivities] GROK STATUS:", resp.StatusCode)
+	fmt.Println("[generateActivities] GROK RAW RESPONSE:", string(respBody))
+
 	var grokResp struct {
 		Choices []struct {
 			Message struct {
 				Content string `json:"content"`
 			} `json:"message"`
 		} `json:"choices"`
+		Error *struct {
+			Message string `json:"message"`
+			Type    string `json:"type"`
+		} `json:"error"`
 	}
 
-	if err := json.Unmarshal(respBody, &grokResp); err != nil || len(grokResp.Choices) == 0 {
+	if err := json.Unmarshal(respBody, &grokResp); err != nil {
+		fmt.Println("[generateActivities] parse error:", err)
+		return fallbackActivities(req), nil
+	}
+
+	if grokResp.Error != nil {
+		fmt.Printf("[generateActivities] xAI error (%s): %s\n", grokResp.Error.Type, grokResp.Error.Message)
+		return fallbackActivities(req), nil
+	}
+
+	if len(grokResp.Choices) == 0 {
+		fmt.Println("[generateActivities] empty choices — full body:", string(respBody))
 		return fallbackActivities(req), nil
 	}
 
