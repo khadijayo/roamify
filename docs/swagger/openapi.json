@@ -30,7 +30,13 @@
     "/api/v1/users/follow/{userId}": {"delete": {"summary": "Unfollow user", "parameters": [{"$ref": "#/components/parameters/userId"}], "responses": {"200": {"description": "OK"}}}},
     "/api/v1/users/{userId}/followers": {"get": {"summary": "List followers", "parameters": [{"$ref": "#/components/parameters/userId"}], "responses": {"200": {"description": "OK"}}}},
     "/api/v1/users/{userId}/following": {"get": {"summary": "List following", "parameters": [{"$ref": "#/components/parameters/userId"}], "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/users/{userId}/posts": {"get": {"summary": "List user posts", "parameters": [{"$ref": "#/components/parameters/userId"}, {"$ref": "#/components/parameters/page"}, {"$ref": "#/components/parameters/pageSize"}], "responses": {"200": {"description": "OK"}}}},
+    "/api/v1/users/{userId}/posts": {
+      "get": {
+        "summary": "List user posts",
+        "parameters": [{"$ref": "#/components/parameters/userId"}, {"$ref": "#/components/parameters/page"}, {"$ref": "#/components/parameters/pageSize"}],
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PaginatedPostResponse"}}}}}
+      }
+    },
 
     "/api/v1/notifications/settings": {
       "get": {"summary": "Get notification settings", "responses": {"200": {"description": "OK"}}},
@@ -70,13 +76,36 @@
     },
 
     "/api/v1/posts/": {
-      "post": {"summary": "Create post", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreatePostRequest"}}}}, "responses": {"201": {"description": "Created"}}},
-      "get": {"summary": "Get feed", "parameters": [{"$ref": "#/components/parameters/page"}, {"$ref": "#/components/parameters/pageSize"}], "responses": {"200": {"description": "OK"}}}
+      "post": {
+        "summary": "Create post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {"schema": {"$ref": "#/components/schemas/CreatePostRequest"}},
+            "multipart/form-data": {"schema": {"$ref": "#/components/schemas/CreatePostMultipartRequest"}}
+          }
+        },
+        "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PostMutationResponse"}}}}}
+      },
+      "get": {"summary": "Get feed", "parameters": [{"$ref": "#/components/parameters/page"}, {"$ref": "#/components/parameters/pageSize"}], "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PaginatedPostResponse"}}}}}}
     },
     "/api/v1/posts/{postId}": {
-      "get": {"summary": "Get post", "parameters": [{"$ref": "#/components/parameters/postId"}], "responses": {"200": {"description": "OK"}}},
-      "patch": {"summary": "Update post", "parameters": [{"$ref": "#/components/parameters/postId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdatePostRequest"}}}}, "responses": {"200": {"description": "OK"}}},
+      "get": {"summary": "Get post", "parameters": [{"$ref": "#/components/parameters/postId"}], "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PostMutationResponse"}}}}}},
+      "patch": {"summary": "Update post", "parameters": [{"$ref": "#/components/parameters/postId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdatePostRequest"}}}}, "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PostMutationResponse"}}}}}},
       "delete": {"summary": "Delete post", "parameters": [{"$ref": "#/components/parameters/postId"}], "responses": {"200": {"description": "OK"}}}
+    },
+    "/api/v1/posts/{postId}/comments": {
+      "get": {
+        "summary": "Get post comments",
+        "parameters": [{"$ref": "#/components/parameters/postId"}],
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PostCommentsListResponse"}}}}}
+      },
+      "post": {
+        "summary": "Add post comment",
+        "parameters": [{"$ref": "#/components/parameters/postId"}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateCommentRequest"}}}},
+        "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PostCommentMutationResponse"}}}}}
+      }
     },
     "/api/v1/posts/{postId}/like": {
       "post": {"summary": "Like post", "parameters": [{"$ref": "#/components/parameters/postId"}], "responses": {"200": {"description": "OK"}}},
@@ -185,8 +214,109 @@
       "UpdateItineraryItemRequest": {"type": "object", "properties": {"day_number": {"type": "integer"}, "title": {"type": "string"}, "item_type": {"type": "string"}, "start_time": {"type": "string", "format": "date-time"}, "location_name": {"type": "string"}, "notes": {"type": "string"}, "lat": {"type": "number"}, "lng": {"type": "number"}, "sort_order": {"type": "integer"}}},
       "CreateExpenseRequest": {"type": "object", "required": ["description", "amount", "expense_date"], "properties": {"description": {"type": "string"}, "category": {"type": "string"}, "amount": {"type": "number"}, "expense_date": {"type": "string", "format": "date-time"}, "currency_code": {"type": "string"}}},
       "UpdateExpenseRequest": {"type": "object", "properties": {"description": {"type": "string"}, "category": {"type": "string"}, "amount": {"type": "number"}, "expense_date": {"type": "string", "format": "date-time"}, "currency_code": {"type": "string"}}},
-      "CreatePostRequest": {"type": "object", "required": ["content"], "properties": {"content": {"type": "string"}, "location": {"type": "string"}, "image_url": {"type": "string"}, "tags": {"type": "array", "items": {"type": "string"}}, "visibility": {"type": "string"}}},
+      "CreatePostRequest": {"type": "object", "required": ["content"], "properties": {"content": {"type": "string"}, "location": {"type": "string"}, "image_url": {"type": "string"}, "tags": {"type": "array", "items": {"type": "string"}}, "visibility": {"type": "string", "enum": ["public", "followers", "private"]}}},
+      "CreatePostMultipartRequest": {
+        "type": "object",
+        "required": ["content"],
+        "properties": {
+          "content": {"type": "string"},
+          "location": {"type": "string"},
+          "image_url": {"type": "string"},
+          "tags": {"type": "array", "items": {"type": "string"}},
+          "visibility": {"type": "string", "enum": ["public", "followers", "private"]},
+          "image": {"type": "string", "format": "binary"},
+          "image_file": {"type": "string", "format": "binary"},
+          "file": {"type": "string", "format": "binary"},
+          "post_image": {"type": "string", "format": "binary"}
+        }
+      },
       "UpdatePostRequest": {"type": "object", "properties": {"content": {"type": "string"}, "location": {"type": "string"}, "image_url": {"type": "string"}, "visibility": {"type": "string"}}},
+      "CreateCommentRequest": {"type": "object", "required": ["content"], "properties": {"content": {"type": "string"}}},
+      "PostTag": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "format": "uuid"},
+          "post_id": {"type": "string", "format": "uuid"},
+          "tag": {"type": "string"},
+          "created_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "PostCommentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "format": "uuid"},
+          "post_id": {"type": "string", "format": "uuid"},
+          "user_id": {"type": "string", "format": "uuid"},
+          "author_name": {"type": "string"},
+          "full_name": {"type": "string"},
+          "author_avatar_url": {"type": "string", "nullable": true},
+          "content": {"type": "string"},
+          "created_at": {"type": "string", "format": "date-time"},
+          "updated_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "PostResponse": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "format": "uuid"},
+          "author_user_id": {"type": "string", "format": "uuid"},
+          "author_name": {"type": "string"},
+          "full_name": {"type": "string"},
+          "author_avatar_url": {"type": "string", "nullable": true},
+          "content": {"type": "string"},
+          "location": {"type": "string"},
+          "image_url": {"type": "string", "nullable": true},
+          "likes_count": {"type": "integer"},
+          "comments_count": {"type": "integer"},
+          "is_liked": {"type": "boolean"},
+          "visibility": {"type": "string"},
+          "created_at": {"type": "string", "format": "date-time"},
+          "updated_at": {"type": "string", "format": "date-time"},
+          "tags": {"type": "array", "items": {"$ref": "#/components/schemas/PostTag"}},
+          "comments": {"type": "array", "items": {"$ref": "#/components/schemas/PostCommentResponse"}}
+        }
+      },
+      "PaginatedPostResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "message": {"type": "string"},
+          "data": {"type": "array", "items": {"$ref": "#/components/schemas/PostResponse"}},
+          "meta": {
+            "type": "object",
+            "properties": {
+              "page": {"type": "integer"},
+              "page_size": {"type": "integer"},
+              "total_items": {"type": "integer"},
+              "total_pages": {"type": "integer"}
+            }
+          }
+        }
+      },
+      "PostMutationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "message": {"type": "string"},
+          "data": {"$ref": "#/components/schemas/PostResponse"}
+        }
+      },
+      "PostCommentsListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "message": {"type": "string"},
+          "data": {"type": "array", "items": {"$ref": "#/components/schemas/PostCommentResponse"}}
+        }
+      },
+      "PostCommentMutationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean"},
+          "message": {"type": "string"},
+          "data": {"$ref": "#/components/schemas/PostCommentResponse"}
+        }
+      },
       "CreateItemRequest": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}, "location": {"type": "string"}, "category": {"type": "string"}, "notes": {"type": "string"}, "estimated_cost": {"type": "number"}}},
       "UpdateItemRequest": {"type": "object", "properties": {"name": {"type": "string"}, "location": {"type": "string"}, "category": {"type": "string"}, "notes": {"type": "string"}, "estimated_cost": {"type": "number"}}},
       "CreateCollectionRequest": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}, "description": {"type": "string"}, "emoji": {"type": "string"}, "color_token": {"type": "string"}}},
