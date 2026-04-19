@@ -10,20 +10,12 @@ import (
 
 type UserStatus string
 
-// UserRole defines the access level of a user.
-type UserRole string
-
 const (
 	StatusActive    UserStatus = "active"
 	StatusSuspended UserStatus = "suspended"
 	StatusDeleted   UserStatus = "deleted"
-
-	RoleUser  UserRole = "USER"
-	RoleAdmin UserRole = "ADMIN"
 )
 
-// User is the core account model.
-// Role controls admin access; IsBanned gates login; IsVerified gates login for email-registered accounts.
 type User struct {
 	ID           uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	Email        *string        `gorm:"type:varchar(255);uniqueIndex"                  json:"email"`
@@ -33,9 +25,6 @@ type User struct {
 	AuthProvider *string        `gorm:"type:varchar(50)"                               json:"auth_provider,omitempty"`
 	ProviderID   *string        `gorm:"type:varchar(255)"                              json:"provider_id,omitempty"`
 	Status       UserStatus     `gorm:"type:varchar(20);default:'active'"              json:"status"`
-	Role         UserRole       `gorm:"type:varchar(20);default:'USER'"                json:"role"`
-	IsBanned     bool           `gorm:"default:false"                                  json:"is_banned"`
-	IsVerified   bool           `gorm:"default:false"                                  json:"is_verified"`
 	LastLoginAt  *time.Time     `                                                      json:"last_login_at"`
 	CreatedAt    time.Time      `                                                      json:"created_at"`
 	UpdatedAt    time.Time      `                                                      json:"updated_at"`
@@ -43,30 +32,6 @@ type User struct {
 
 	VibeProfile *VibeProfile `gorm:"foreignKey:UserID"             json:"vibe_profile,omitempty"`
 }
-
-// VerificationToken stores email verification tokens issued at registration.
-type VerificationToken struct {
-	ID        uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	UserID    uuid.UUID  `gorm:"type:uuid;not null;index"                       json:"user_id"`
-	Token     string     `gorm:"type:varchar(255);uniqueIndex;not null"         json:"token"`
-	ExpiresAt time.Time  `gorm:"not null"                                       json:"expires_at"`
-	UsedAt    *time.Time `                                                      json:"used_at,omitempty"`
-	CreatedAt time.Time  `                                                      json:"created_at"`
-}
-
-func (VerificationToken) TableName() string { return "verification_tokens" }
-
-// AdminOTPToken stores 6-digit OTPs for admin 2FA login.
-type AdminOTPToken struct {
-	ID        uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	UserID    uuid.UUID  `gorm:"type:uuid;not null;index"                       json:"user_id"`
-	OTP       string     `gorm:"type:varchar(10);not null"                      json:"-"`
-	ExpiresAt time.Time  `gorm:"not null"                                       json:"expires_at"`
-	UsedAt    *time.Time `                                                      json:"used_at,omitempty"`
-	CreatedAt time.Time  `                                                      json:"created_at"`
-}
-
-func (AdminOTPToken) TableName() string { return "admin_otp_tokens" }
 
 type UserFollow struct {
 	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
@@ -176,26 +141,4 @@ type UpdatePrivacySettingsRequest struct {
 
 type SearchUsersRequest struct {
 	Q string `form:"q"`
-}
-
-// VerifyEmailRequest is the query param DTO for GET /auth/verify-email.
-type VerifyEmailRequest struct {
-	Token string `form:"token" binding:"required"`
-}
-
-// ResendVerificationRequest allows re-sending the verification email.
-type ResendVerificationRequest struct {
-	Email string `json:"email" binding:"required,email"`
-}
-
-// AdminLoginRequest is step-1 of admin 2FA: validates credentials and sends OTP.
-type AdminLoginRequest struct {
-	Email    string `json:"email"    binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
-
-// AdminOTPRequest is step-2 of admin 2FA: submits the OTP to receive a JWT.
-type AdminOTPRequest struct {
-	Email string `json:"email" binding:"required,email"`
-	OTP   string `json:"otp"   binding:"required"`
 }

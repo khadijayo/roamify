@@ -24,9 +24,6 @@ type Repository interface {
 	GetPrivacySettings(userID uuid.UUID) (*UserPrivacySetting, error)
 	UpsertPrivacySettings(settings *UserPrivacySetting) error
 	SearchUsers(query string, limit int) ([]User, error)
-	CreateVerificationToken(token *VerificationToken) error
-	FindVerificationToken(token string) (*VerificationToken, error)
-	UpdateVerificationToken(token *VerificationToken) error
 }
 
 type repository struct {
@@ -150,20 +147,3 @@ func (r *repository) SearchUsers(query string, limit int) ([]User, error) {
 		Find(&users).Error
 	return users, err
 }
-
-func (r *repository) CreateVerificationToken(token *VerificationToken) error {
-	return r.db.Create(token).Error
-}
-
-func (r *repository) FindVerificationToken(token string) (*VerificationToken, error) {
-	var vt VerificationToken
-	if err := r.db.Where("token = ?", token).First(&vt).Error; err != nil {
-		return nil, err
-	}
-	return &vt, nil
-}
-
-func (r *repository) UpdateVerificationToken(token *VerificationToken) error {
-	return r.db.Save(token).Error
-}
-

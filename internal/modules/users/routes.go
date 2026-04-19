@@ -10,7 +10,6 @@ func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
 		authRoutes.POST("/register", h.Register)
 		authRoutes.POST("/login", h.Login)
 		authRoutes.POST("/social", h.SocialAuth)
-		authRoutes.GET("/verify-email", h.VerifyEmail)
 	}
 	userRoutes := r.Group("/users")
     userRoutes.Use(auth)
