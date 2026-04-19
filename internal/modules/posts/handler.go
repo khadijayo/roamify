@@ -1,7 +1,15 @@
 package posts
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"mime/multipart"
+	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -19,12 +27,12 @@ func NewHandler(svc Service) *Handler {
 
 func (h *Handler) CreatePost(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	var req CreatePostRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	req, err := bindCreatePostRequest(c)
+	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	post, err := h.svc.CreatePost(userID, &req)
+	post, err := h.svc.CreatePost(userID, req)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -44,14 +52,14 @@ func (h *Handler) GetFeedV2(c *gin.Context) {
 	response.OKPaginated(c, "feed fetched", posts, meta)
 }
 
-
 func (h *Handler) GetPost(c *gin.Context) {
+	viewerID := middleware.GetUserID(c)
 	postID, err := uuid.Parse(c.Param("postId"))
 	if err != nil {
 		response.BadRequest(c, "invalid post id")
 		return
 	}
-	post, err := h.svc.GetPost(postID)
+	post, err := h.svc.GetPost(postID, viewerID)
 	if err != nil {
 		response.NotFound(c, "post not found")
 		return
@@ -60,6 +68,7 @@ func (h *Handler) GetPost(c *gin.Context) {
 }
 
 func (h *Handler) GetUserPosts(c *gin.Context) {
+	viewerID := middleware.GetUserID(c)
 	authorID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
 		response.BadRequest(c, "invalid user id")
@@ -67,7 +76,7 @@ func (h *Handler) GetUserPosts(c *gin.Context) {
 	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-	posts, meta, err := h.svc.GetUserPosts(authorID, page, pageSize)
+	posts, meta, err := h.svc.GetUserPosts(authorID, viewerID, page, pageSize)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -135,4 +144,157 @@ func (h *Handler) UnlikePost(c *gin.Context) {
 		return
 	}
 	response.OK(c, "post unliked", nil)
+}
+
+func (h *Handler) GetComments(c *gin.Context) {
+	postID, err := uuid.Parse(c.Param("postId"))
+	if err != nil {
+		response.BadRequest(c, "invalid post id")
+		return
+	}
+	comments, err := h.svc.GetComments(postID)
+	if err != nil {
+		response.NotFound(c, "post not found")
+		return
+	}
+	response.OK(c, "comments fetched", comments)
+}
+
+func (h *Handler) AddComment(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	postID, err := uuid.Parse(c.Param("postId"))
+	if err != nil {
+		response.BadRequest(c, "invalid post id")
+		return
+	}
+
+	var req CreateCommentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	comment, err := h.svc.AddComment(postID, userID, &req)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	response.Created(c, "comment created", comment)
+}
+
+func bindCreatePostRequest(c *gin.Context) (*CreatePostRequest, error) {
+	if strings.HasPrefix(c.ContentType(), "multipart/form-data") {
+		return bindMultipartCreatePostRequest(c)
+	}
+
+	var req CreatePostRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		return nil, err
+	}
+	return &req, nil
+}
+
+func bindMultipartCreatePostRequest(c *gin.Context) (*CreatePostRequest, error) {
+	req := &CreatePostRequest{
+		Content:    strings.TrimSpace(c.PostForm("content")),
+		Location:   strings.TrimSpace(c.PostForm("location")),
+		Visibility: Visibility(strings.TrimSpace(c.PostForm("visibility"))),
+	}
+
+	if req.Content == "" {
+		return nil, errors.New("content is required")
+	}
+
+	if imageURL := strings.TrimSpace(c.PostForm("image_url")); imageURL != "" {
+		req.ImageURL = &imageURL
+	}
+
+	tags, err := parsePostTags(c)
+	if err != nil {
+		return nil, err
+	}
+	req.Tags = tags
+
+	fileHeader, err := firstUploadedFile(c, "image", "image_file", "file", "post_image")
+	if err != nil {
+		return nil, err
+	}
+	if fileHeader != nil {
+		storedURL, err := saveUploadedPostImage(c, fileHeader)
+		if err != nil {
+			return nil, err
+		}
+		req.ImageURL = &storedURL
+	}
+
+	return req, nil
+}
+
+func parsePostTags(c *gin.Context) ([]string, error) {
+	tags := c.PostFormArray("tags")
+	if len(tags) == 0 {
+		tags = c.PostFormArray("tags[]")
+	}
+	if len(tags) > 0 {
+		return cleanTags(tags), nil
+	}
+
+	raw := strings.TrimSpace(c.PostForm("tags"))
+	if raw == "" {
+		return nil, nil
+	}
+
+	if strings.HasPrefix(raw, "[") {
+		var parsed []string
+		if err := json.Unmarshal([]byte(raw), &parsed); err != nil {
+			return nil, errors.New("invalid tags format")
+		}
+		return cleanTags(parsed), nil
+	}
+
+	return cleanTags(strings.Split(raw, ",")), nil
+}
+
+func cleanTags(tags []string) []string {
+	cleaned := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		tag = strings.TrimSpace(tag)
+		if tag == "" {
+			continue
+		}
+		cleaned = append(cleaned, tag)
+	}
+	return cleaned
+}
+
+func firstUploadedFile(c *gin.Context, fieldNames ...string) (*multipart.FileHeader, error) {
+	for _, fieldName := range fieldNames {
+		file, err := c.FormFile(fieldName)
+		if err == nil {
+			return file, nil
+		}
+		if !errors.Is(err, http.ErrMissingFile) {
+			return nil, err
+		}
+	}
+	return nil, nil
+}
+
+func saveUploadedPostImage(c *gin.Context, file *multipart.FileHeader) (string, error) {
+	if err := os.MkdirAll(filepath.Join("uploads", "posts"), 0o755); err != nil {
+		return "", fmt.Errorf("create upload directory: %w", err)
+	}
+
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if ext == "" {
+		ext = ".bin"
+	}
+	filename := uuid.NewString() + ext
+	dst := filepath.Join("uploads", "posts", filename)
+
+	if err := c.SaveUploadedFile(file, dst); err != nil {
+		return "", fmt.Errorf("save uploaded image: %w", err)
+	}
+
+	return "/uploads/posts/" + filename, nil
 }

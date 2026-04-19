@@ -1,0 +1,3 @@
+./config.go
+./database.go
+./migrate.go

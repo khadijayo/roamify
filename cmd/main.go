@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	
+
 	"github.com/gin-gonic/gin"
 	"github.com/khadijayo/roamify/config"
 	"github.com/khadijayo/roamify/internal/modules/challenges"
@@ -40,6 +40,7 @@ func main() {
 		&posts.Post{},
 		&posts.PostTag{},
 		&posts.PostLike{},
+		&posts.PostComment{},
 		&wishlist.WishlistItem{},
 		&wishlist.WishlistCollection{},
 		&wishlist.WishlistCollectionItem{},
@@ -64,6 +65,7 @@ func main() {
 	r.Use(gin.Recovery())
 	r.Use(middleware.Logger())
 	r.Use(middleware.CORS())
+	r.Static("/uploads", "./uploads")
 
 	// 4. Health endpoint
 	r.GET("/health", func(c *gin.Context) {
@@ -105,7 +107,6 @@ func main() {
 		log.Fatalf("[roamify] server failed: %v", err)
 	}
 
-	
 }
 
 // resolveSwaggerDir dynamically finds ./docs/swagger

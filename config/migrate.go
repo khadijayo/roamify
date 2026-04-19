@@ -38,6 +38,7 @@ func AutoMigrate() {
 		&posts.Post{},
 		&posts.PostTag{},
 		&posts.PostLike{},
+		&posts.PostComment{},
 
 		// Wishlist / vault
 		&wishlist.WishlistItem{},
