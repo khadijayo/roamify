@@ -13,6 +13,7 @@
     "/api/v1/auth/register": {"post": {"summary": "Register", "security": [], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RegisterRequest"}}}}, "responses": {"201": {"description": "Created"}}}},
     "/api/v1/auth/login": {"post": {"summary": "Login", "security": [], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LoginRequest"}}}}, "responses": {"200": {"description": "OK"}}}},
     "/api/v1/auth/social": {"post": {"summary": "Social auth", "security": [], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SocialAuthRequest"}}}}, "responses": {"200": {"description": "OK"}}}},
+    "/api/v1/auth/verify-email": {"get": {"summary": "Verify email", "security": [], "parameters": [{"$ref": "#/components/parameters/token"}], "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/VerifyEmailResponse"}}}}}}},
 
     "/api/v1/users/me": {
       "get": {"summary": "Get my profile", "responses": {"200": {"description": "OK"}}},
@@ -105,11 +106,95 @@
         "parameters": [{"$ref": "#/components/parameters/postId"}],
         "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateCommentRequest"}}}},
         "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PostCommentMutationResponse"}}}}}
+      },
+      "delete": {
+        "summary": "Delete post comment",
+        "parameters": [{"$ref": "#/components/parameters/postId"}, {"$ref": "#/components/parameters/commentIdQuery"}],
+        "responses": {"200": {"description": "OK"}}
       }
     },
     "/api/v1/posts/{postId}/like": {
       "post": {"summary": "Like post", "parameters": [{"$ref": "#/components/parameters/postId"}], "responses": {"200": {"description": "OK"}}},
       "delete": {"summary": "Unlike post", "parameters": [{"$ref": "#/components/parameters/postId"}], "responses": {"200": {"description": "OK"}}}
+    },
+
+    "/api/v1/reports/": {
+      "post": {
+        "summary": "Create report",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateReportRequest"}}}},
+        "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ReportMutationResponse"}}}}}
+      }
+    },
+
+    "/api/v1/admin/users": {
+      "get": {
+        "summary": "List users for moderation",
+        "parameters": [{"$ref": "#/components/parameters/page"}, {"$ref": "#/components/parameters/limit"}, {"$ref": "#/components/parameters/q"}],
+        "responses": {"200": {"description": "OK"}}
+      }
+    },
+    "/api/v1/admin/users/{id}/ban": {
+      "put": {
+        "summary": "Ban user",
+        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
+        "responses": {"200": {"description": "OK"}}
+      }
+    },
+    "/api/v1/admin/users/{id}/unban": {
+      "put": {
+        "summary": "Unban user",
+        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
+        "responses": {"200": {"description": "OK"}}
+      }
+    },
+    "/api/v1/admin/users/{id}": {
+      "delete": {
+        "summary": "Soft delete user",
+        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
+        "responses": {"200": {"description": "OK"}}
+      }
+    },
+    "/api/v1/admin/posts": {
+      "get": {
+        "summary": "List posts for moderation",
+        "parameters": [{"$ref": "#/components/parameters/page"}, {"$ref": "#/components/parameters/limit"}, {"$ref": "#/components/parameters/q"}],
+        "responses": {"200": {"description": "OK"}}
+      }
+    },
+    "/api/v1/admin/posts/{id}": {
+      "delete": {
+        "summary": "Soft delete post",
+        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
+        "responses": {"200": {"description": "OK"}}
+      }
+    },
+    "/api/v1/admin/posts/{id}/hide": {
+      "put": {
+        "summary": "Hide post",
+        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
+        "responses": {"200": {"description": "OK"}}
+      }
+    },
+    "/api/v1/admin/posts/{id}/unhide": {
+      "put": {
+        "summary": "Unhide post",
+        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
+        "responses": {"200": {"description": "OK"}}
+      }
+    },
+    "/api/v1/admin/reports": {
+      "get": {
+        "summary": "List reports for moderation",
+        "parameters": [{"$ref": "#/components/parameters/page"}, {"$ref": "#/components/parameters/limit"}, {"$ref": "#/components/parameters/status"}],
+        "responses": {"200": {"description": "OK"}}
+      }
+    },
+    "/api/v1/admin/reports/{id}/resolve": {
+      "put": {
+        "summary": "Resolve report",
+        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
+        "responses": {"200": {"description": "OK"}}
+      }
     },
 
     "/api/v1/wishlist/items": {
@@ -185,13 +270,17 @@
       "itemId": {"name": "itemId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
       "expenseId": {"name": "expenseId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
       "postId": {"name": "postId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
+      "adminResourceId": {"name": "id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
       "collectionId": {"name": "collectionId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
       "stampId": {"name": "stampId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
       "locationId": {"name": "locationId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
+      "commentIdQuery": {"name": "comment_id", "in": "query", "required": true, "schema": {"type": "string", "format": "uuid"}},
+      "token": {"name": "token", "in": "query", "required": true, "schema": {"type": "string"}},
       "page": {"name": "page", "in": "query", "schema": {"type": "integer", "default": 1}},
       "pageSize": {"name": "page_size", "in": "query", "schema": {"type": "integer", "default": 20}},
       "limit": {"name": "limit", "in": "query", "schema": {"type": "integer", "default": 20}},
       "q": {"name": "q", "in": "query", "schema": {"type": "string"}},
+      "status": {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["pending", "resolved"]}},
       "aesthetic": {"name": "aesthetic", "in": "query", "schema": {"type": "string"}},
       "sortBy": {"name": "sort_by", "in": "query", "schema": {"type": "string"}},
       "hiddenGemsOnly": {"name": "hidden_gems_only", "in": "query", "schema": {"type": "boolean"}},
@@ -201,6 +290,7 @@
       "RegisterRequest": {"type": "object", "required": ["full_name", "email", "password"], "properties": {"full_name": {"type": "string"}, "email": {"type": "string", "format": "email"}, "password": {"type": "string", "minLength": 8}}},
       "LoginRequest": {"type": "object", "required": ["email", "password"], "properties": {"email": {"type": "string", "format": "email"}, "password": {"type": "string"}}},
       "SocialAuthRequest": {"type": "object", "required": ["provider", "provider_user_id", "full_name"], "properties": {"provider": {"type": "string", "enum": ["google", "tiktok", "apple"]}, "provider_user_id": {"type": "string"}, "email": {"type": "string", "format": "email"}, "full_name": {"type": "string"}, "avatar_url": {"type": "string"}}},
+      "VerifyEmailResponse": {"type": "object", "properties": {"success": {"type": "boolean"}, "data": {"type": "object", "properties": {"user_id": {"type": "string", "format": "uuid"}, "is_verified": {"type": "boolean"}}}}},
       "UpdateProfileRequest": {"type": "object", "properties": {"full_name": {"type": "string"}, "avatar_url": {"type": "string"}}},
       "UpdateVibeProfileRequest": {"type": "object", "properties": {"explorer_type": {"type": "string"}, "preferred_vibes": {"type": "array", "items": {"type": "string"}}, "travel_pace": {"type": "string"}, "budget_style": {"type": "string"}, "travel_with": {"type": "string"}, "interests": {"type": "array", "items": {"type": "string"}}, "onboarding_complete": {"type": "boolean"}}},
       "FollowUserRequest": {"type": "object", "required": ["user_id"], "properties": {"user_id": {"type": "string", "format": "uuid"}}},
@@ -317,6 +407,9 @@
           "data": {"$ref": "#/components/schemas/PostCommentResponse"}
         }
       },
+      "CreateReportRequest": {"type": "object", "required": ["target_type", "target_id", "reason"], "properties": {"target_type": {"type": "string", "enum": ["user", "post"]}, "target_id": {"type": "string", "format": "uuid"}, "reason": {"type": "string"}}},
+      "Report": {"type": "object", "properties": {"id": {"type": "string", "format": "uuid"}, "reporter_id": {"type": "string", "format": "uuid"}, "target_type": {"type": "string", "enum": ["user", "post"]}, "target_id": {"type": "string", "format": "uuid"}, "reason": {"type": "string"}, "status": {"type": "string", "enum": ["pending", "resolved"]}, "created_at": {"type": "string", "format": "date-time"}}},
+      "ReportMutationResponse": {"type": "object", "properties": {"success": {"type": "boolean"}, "data": {"$ref": "#/components/schemas/Report"}}},
       "CreateItemRequest": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}, "location": {"type": "string"}, "category": {"type": "string"}, "notes": {"type": "string"}, "estimated_cost": {"type": "number"}}},
       "UpdateItemRequest": {"type": "object", "properties": {"name": {"type": "string"}, "location": {"type": "string"}, "category": {"type": "string"}, "notes": {"type": "string"}, "estimated_cost": {"type": "number"}}},
       "CreateCollectionRequest": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}, "description": {"type": "string"}, "emoji": {"type": "string"}, "color_token": {"type": "string"}}},
