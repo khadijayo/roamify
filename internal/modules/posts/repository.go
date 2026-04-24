@@ -1,35 +1,39 @@
 package posts
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Repository interface {
-	CreatePost(post *Post) error
-	FindPostByID(id uuid.UUID) (*Post, error)
-	FindFeed(limit, offset int) ([]Post, int64, error)
-	FindFeedForUser(viewerID uuid.UUID, limit, offset int) ([]Post, int64, error)
-	FindByAuthor(authorID uuid.UUID, limit, offset int) ([]Post, int64, error)
-	UpdatePost(post *Post) error
-	DeletePost(id uuid.UUID) error
+	CreatePost(ctx context.Context, post *Post) error
+	FindPostByID(ctx context.Context, id uuid.UUID) (*Post, error)
+	FindFeed(ctx context.Context, limit, offset int) ([]Post, int64, error)
+	FindFeedForUser(ctx context.Context, viewerID uuid.UUID, limit, offset int) ([]Post, int64, error)
+	FindByAuthor(ctx context.Context, authorID uuid.UUID, limit, offset int, includeHidden bool) ([]Post, int64, error)
+	UpdatePost(ctx context.Context, post *Post) error
+	DeletePost(ctx context.Context, id uuid.UUID) error
 
-	AddTags(tags []PostTag) error
-	DeleteTagsByPost(postID uuid.UUID) error
+	AddTags(ctx context.Context, tags []PostTag) error
+	DeleteTagsByPost(ctx context.Context, postID uuid.UUID) error
 
-	AddLike(like *PostLike) error
-	FindLike(postID, userID uuid.UUID) (*PostLike, error)
-	RemoveLike(postID, userID uuid.UUID) error
-	IncrementLikes(postID uuid.UUID) error
-	DecrementLikes(postID uuid.UUID) error
-	RefreshLikesCount(postID uuid.UUID) error
+	AddLike(ctx context.Context, like *PostLike) error
+	FindLike(ctx context.Context, postID, userID uuid.UUID) (*PostLike, error)
+	RemoveLike(ctx context.Context, postID, userID uuid.UUID) error
+	IncrementLikes(ctx context.Context, postID uuid.UUID) error
+	DecrementLikes(ctx context.Context, postID uuid.UUID) error
+	RefreshLikesCount(ctx context.Context, postID uuid.UUID) error
 
-	AddComment(comment *PostComment) error
-	FindCommentsByPost(postID uuid.UUID) ([]PostComment, error)
-	FindAuthorSummaries(userIDs []uuid.UUID) (map[uuid.UUID]postAuthorSummary, error)
-	FindLikeCounts(postIDs []uuid.UUID) (map[uuid.UUID]int64, error)
-	FindCommentCounts(postIDs []uuid.UUID) (map[uuid.UUID]int64, error)
-	FindLikedPostIDs(postIDs []uuid.UUID, viewerID uuid.UUID) (map[uuid.UUID]bool, error)
+	AddComment(ctx context.Context, comment *PostComment) error
+	FindCommentsByPost(ctx context.Context, postID uuid.UUID) ([]PostComment, error)
+	FindCommentByID(ctx context.Context, commentID uuid.UUID) (*PostComment, error)
+	DeleteComment(ctx context.Context, commentID uuid.UUID) error
+	FindAuthorSummaries(ctx context.Context, userIDs []uuid.UUID) (map[uuid.UUID]postAuthorSummary, error)
+	FindLikeCounts(ctx context.Context, postIDs []uuid.UUID) (map[uuid.UUID]int64, error)
+	FindCommentCounts(ctx context.Context, postIDs []uuid.UUID) (map[uuid.UUID]int64, error)
+	FindLikedPostIDs(ctx context.Context, postIDs []uuid.UUID, viewerID uuid.UUID) (map[uuid.UUID]bool, error)
 }
 
 type repository struct {
@@ -40,102 +44,108 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db: db}
 }
 
-func (r *repository) CreatePost(post *Post) error {
-	return r.db.Create(post).Error
+func (r *repository) CreatePost(ctx context.Context, post *Post) error {
+	return r.db.WithContext(ctx).Create(post).Error
 }
 
-func (r *repository) FindPostByID(id uuid.UUID) (*Post, error) {
+func (r *repository) FindPostByID(ctx context.Context, id uuid.UUID) (*Post, error) {
 	var post Post
-	err := r.db.Preload("Tags").First(&post, "id = ?", id).Error
+	err := r.db.WithContext(ctx).Preload("Tags").First(&post, "id = ?", id).Error
 	return &post, err
 }
 
-func (r *repository) FindFeed(limit, offset int) ([]Post, int64, error) {
+func (r *repository) FindFeed(ctx context.Context, limit, offset int) ([]Post, int64, error) {
 	var posts []Post
 	var count int64
-	r.db.Model(&Post{}).Where("visibility = ?", VisibilityPublic).Count(&count)
-	err := r.db.Preload("Tags").
-		Where("visibility = ?", VisibilityPublic).
+	query := r.db.WithContext(ctx).Model(&Post{}).Where("visibility = ? AND is_hidden = false", VisibilityPublic)
+	query.Count(&count)
+	err := r.db.WithContext(ctx).Preload("Tags").
+		Where("visibility = ? AND is_hidden = false", VisibilityPublic).
 		Order("created_at DESC").
 		Limit(limit).Offset(offset).
 		Find(&posts).Error
 	return posts, count, err
 }
 
-func (r *repository) FindByAuthor(authorID uuid.UUID, limit, offset int) ([]Post, int64, error) {
+func (r *repository) FindByAuthor(ctx context.Context, authorID uuid.UUID, limit, offset int, includeHidden bool) ([]Post, int64, error) {
 	var posts []Post
 	var count int64
-	r.db.Model(&Post{}).Where("author_user_id = ?", authorID).Count(&count)
-	err := r.db.Preload("Tags").
-		Where("author_user_id = ?", authorID).
+	query := r.db.WithContext(ctx).Model(&Post{}).Where("author_user_id = ?", authorID)
+	findQuery := r.db.WithContext(ctx).Preload("Tags").Where("author_user_id = ?", authorID)
+	if !includeHidden {
+		query = query.Where("is_hidden = false")
+		findQuery = findQuery.Where("is_hidden = false")
+	}
+	query.Count(&count)
+	err := findQuery.
 		Order("created_at DESC").
 		Limit(limit).Offset(offset).
 		Find(&posts).Error
 	return posts, count, err
 }
 
-func (r *repository) UpdatePost(post *Post) error {
-	return r.db.Save(post).Error
+func (r *repository) UpdatePost(ctx context.Context, post *Post) error {
+	return r.db.WithContext(ctx).Save(post).Error
 }
 
-func (r *repository) DeletePost(id uuid.UUID) error {
-	return r.db.Delete(&Post{}, "id = ?", id).Error
+func (r *repository) DeletePost(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&Post{}, "id = ?", id).Error
 }
 
-func (r *repository) AddTags(tags []PostTag) error {
+func (r *repository) AddTags(ctx context.Context, tags []PostTag) error {
 	if len(tags) == 0 {
 		return nil
 	}
-	return r.db.Create(&tags).Error
+	return r.db.WithContext(ctx).Create(&tags).Error
 }
 
-func (r *repository) DeleteTagsByPost(postID uuid.UUID) error {
-	return r.db.Where("post_id = ?", postID).Delete(&PostTag{}).Error
+func (r *repository) DeleteTagsByPost(ctx context.Context, postID uuid.UUID) error {
+	return r.db.WithContext(ctx).Where("post_id = ?", postID).Delete(&PostTag{}).Error
 }
 
-func (r *repository) AddLike(like *PostLike) error {
-	return r.db.Create(like).Error
+func (r *repository) AddLike(ctx context.Context, like *PostLike) error {
+	return r.db.WithContext(ctx).Create(like).Error
 }
 
-func (r *repository) FindLike(postID, userID uuid.UUID) (*PostLike, error) {
+func (r *repository) FindLike(ctx context.Context, postID, userID uuid.UUID) (*PostLike, error) {
 	var like PostLike
-	err := r.db.Where("post_id = ? AND user_id = ?", postID, userID).First(&like).Error
+	err := r.db.WithContext(ctx).Where("post_id = ? AND user_id = ?", postID, userID).First(&like).Error
 	return &like, err
 }
 
-func (r *repository) RemoveLike(postID, userID uuid.UUID) error {
-	return r.db.Where("post_id = ? AND user_id = ?", postID, userID).Delete(&PostLike{}).Error
+func (r *repository) RemoveLike(ctx context.Context, postID, userID uuid.UUID) error {
+	return r.db.WithContext(ctx).Where("post_id = ? AND user_id = ?", postID, userID).Delete(&PostLike{}).Error
 }
 
-func (r *repository) IncrementLikes(postID uuid.UUID) error {
-	return r.db.Model(&Post{}).Where("id = ?", postID).UpdateColumn("likes_count", gorm.Expr("likes_count + 1")).Error
+func (r *repository) IncrementLikes(ctx context.Context, postID uuid.UUID) error {
+	return r.db.WithContext(ctx).Model(&Post{}).Where("id = ?", postID).UpdateColumn("likes_count", gorm.Expr("likes_count + 1")).Error
 }
 
-func (r *repository) DecrementLikes(postID uuid.UUID) error {
-	return r.db.Model(&Post{}).Where("id = ?", postID).UpdateColumn("likes_count", gorm.Expr("GREATEST(likes_count - 1, 0)")).Error
+func (r *repository) DecrementLikes(ctx context.Context, postID uuid.UUID) error {
+	return r.db.WithContext(ctx).Model(&Post{}).Where("id = ?", postID).UpdateColumn("likes_count", gorm.Expr("GREATEST(likes_count - 1, 0)")).Error
 }
 
-func (r *repository) RefreshLikesCount(postID uuid.UUID) error {
-	return r.db.Model(&Post{}).
+func (r *repository) RefreshLikesCount(ctx context.Context, postID uuid.UUID) error {
+	return r.db.WithContext(ctx).Model(&Post{}).
 		Where("id = ?", postID).
 		Update("likes_count", gorm.Expr("(SELECT COUNT(*) FROM post_likes WHERE post_id = ?)", postID)).
 		Error
 }
 
-func (r *repository) FindFeedForUser(viewerID uuid.UUID, limit, offset int) ([]Post, int64, error) {
+func (r *repository) FindFeedForUser(ctx context.Context, viewerID uuid.UUID, limit, offset int) ([]Post, int64, error) {
 	var posts []Post
 	var count int64
 
-	r.db.Model(&Post{}).
+	query := r.db.WithContext(ctx).Model(&Post{}).
 		Where(
-			"visibility = ? OR (visibility = ? AND author_user_id IN (SELECT following_id FROM user_follows WHERE follower_id = ?))",
+			"(visibility = ? OR (visibility = ? AND author_user_id IN (SELECT following_id FROM user_follows WHERE follower_id = ?))) AND is_hidden = false",
 			VisibilityPublic, VisibilityFollowers, viewerID,
-		).
-		Count(&count)
+		)
+	query.Count(&count)
 
-	err := r.db.Preload("Tags").
+	err := r.db.WithContext(ctx).Preload("Tags").
 		Where(
-			"visibility = ? OR (visibility = ? AND author_user_id IN (SELECT following_id FROM user_follows WHERE follower_id = ?))",
+			"(visibility = ? OR (visibility = ? AND author_user_id IN (SELECT following_id FROM user_follows WHERE follower_id = ?))) AND is_hidden = false",
 			VisibilityPublic, VisibilityFollowers, viewerID,
 		).
 		Order("created_at DESC").
@@ -145,20 +155,30 @@ func (r *repository) FindFeedForUser(viewerID uuid.UUID, limit, offset int) ([]P
 	return posts, count, err
 }
 
-func (r *repository) AddComment(comment *PostComment) error {
-	return r.db.Create(comment).Error
+func (r *repository) AddComment(ctx context.Context, comment *PostComment) error {
+	return r.db.WithContext(ctx).Create(comment).Error
 }
 
-func (r *repository) FindCommentsByPost(postID uuid.UUID) ([]PostComment, error) {
+func (r *repository) FindCommentsByPost(ctx context.Context, postID uuid.UUID) ([]PostComment, error) {
 	var comments []PostComment
-	err := r.db.
+	err := r.db.WithContext(ctx).
 		Where("post_id = ?", postID).
 		Order("created_at ASC").
 		Find(&comments).Error
 	return comments, err
 }
 
-func (r *repository) FindAuthorSummaries(userIDs []uuid.UUID) (map[uuid.UUID]postAuthorSummary, error) {
+func (r *repository) FindCommentByID(ctx context.Context, commentID uuid.UUID) (*PostComment, error) {
+	var comment PostComment
+	err := r.db.WithContext(ctx).First(&comment, "id = ?", commentID).Error
+	return &comment, err
+}
+
+func (r *repository) DeleteComment(ctx context.Context, commentID uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&PostComment{}, "id = ?", commentID).Error
+}
+
+func (r *repository) FindAuthorSummaries(ctx context.Context, userIDs []uuid.UUID) (map[uuid.UUID]postAuthorSummary, error) {
 	summaries := make(map[uuid.UUID]postAuthorSummary)
 	if len(userIDs) == 0 {
 		return summaries, nil
@@ -170,7 +190,7 @@ func (r *repository) FindAuthorSummaries(userIDs []uuid.UUID) (map[uuid.UUID]pos
 		AvatarURL *string   `gorm:"column:avatar_url"`
 	}
 
-	if err := r.db.Table("users").
+	if err := r.db.WithContext(ctx).Table("users").
 		Select("id, full_name, avatar_url").
 		Where("id IN ?", userIDs).
 		Find(&rows).Error; err != nil {
@@ -188,15 +208,15 @@ func (r *repository) FindAuthorSummaries(userIDs []uuid.UUID) (map[uuid.UUID]pos
 	return summaries, nil
 }
 
-func (r *repository) FindLikeCounts(postIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
-	return r.aggregateCounts("post_likes", postIDs)
+func (r *repository) FindLikeCounts(ctx context.Context, postIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
+	return r.aggregateLikeCounts(ctx, postIDs)
 }
 
-func (r *repository) FindCommentCounts(postIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
-	return r.aggregateCounts("post_comments", postIDs)
+func (r *repository) FindCommentCounts(ctx context.Context, postIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
+	return r.aggregateCommentCounts(ctx, postIDs)
 }
 
-func (r *repository) FindLikedPostIDs(postIDs []uuid.UUID, viewerID uuid.UUID) (map[uuid.UUID]bool, error) {
+func (r *repository) FindLikedPostIDs(ctx context.Context, postIDs []uuid.UUID, viewerID uuid.UUID) (map[uuid.UUID]bool, error) {
 	liked := make(map[uuid.UUID]bool)
 	if len(postIDs) == 0 || viewerID == uuid.Nil {
 		return liked, nil
@@ -206,7 +226,7 @@ func (r *repository) FindLikedPostIDs(postIDs []uuid.UUID, viewerID uuid.UUID) (
 		PostID uuid.UUID `gorm:"column:post_id"`
 	}
 
-	if err := r.db.Table("post_likes").
+	if err := r.db.WithContext(ctx).Table("post_likes").
 		Select("post_id").
 		Where("user_id = ? AND post_id IN ?", viewerID, postIDs).
 		Find(&rows).Error; err != nil {
@@ -220,7 +240,7 @@ func (r *repository) FindLikedPostIDs(postIDs []uuid.UUID, viewerID uuid.UUID) (
 	return liked, nil
 }
 
-func (r *repository) aggregateCounts(table string, postIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
+func (r *repository) aggregateLikeCounts(ctx context.Context, postIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
 	counts := make(map[uuid.UUID]int64)
 	if len(postIDs) == 0 {
 		return counts, nil
@@ -231,9 +251,35 @@ func (r *repository) aggregateCounts(table string, postIDs []uuid.UUID) (map[uui
 		Count  int64     `gorm:"column:count"`
 	}
 
-	if err := r.db.Table(table).
+	if err := r.db.WithContext(ctx).Table("post_likes").
 		Select("post_id, COUNT(*) AS count").
 		Where("post_id IN ?", postIDs).
+		Group("post_id").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows {
+		counts[row.PostID] = row.Count
+	}
+
+	return counts, nil
+}
+
+func (r *repository) aggregateCommentCounts(ctx context.Context, postIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
+	counts := make(map[uuid.UUID]int64)
+	if len(postIDs) == 0 {
+		return counts, nil
+	}
+
+	var rows []struct {
+		PostID uuid.UUID `gorm:"column:post_id"`
+		Count  int64     `gorm:"column:count"`
+	}
+
+	if err := r.db.WithContext(ctx).Table("post_comments").
+		Select("post_id, COUNT(*) AS count").
+		Where("post_id IN ? AND deleted_at IS NULL", postIDs).
 		Group("post_id").
 		Find(&rows).Error; err != nil {
 		return nil, err

@@ -22,6 +22,8 @@ type Post struct {
 	Location     string         `gorm:"type:varchar(255)"                              json:"location"`
 	ImageURL     *string        `gorm:"type:text"                                      json:"image_url"`
 	LikesCount   int            `gorm:"default:0"                                      json:"likes_count"`
+	IsHidden     bool           `gorm:"default:false;not null"                         json:"is_hidden"`
+	ReportsCount int            `gorm:"default:0;not null"                             json:"reports_count"`
 	Visibility   Visibility     `gorm:"type:varchar(20);default:'public'"              json:"visibility"`
 	CreatedAt    time.Time      `                                                      json:"created_at"`
 	UpdatedAt    time.Time      `                                                      json:"updated_at"`
@@ -104,6 +106,8 @@ type PostResponse struct {
 	ImageURL        *string               `json:"image_url"`
 	LikesCount      int64                 `json:"likes_count"`
 	CommentsCount   int64                 `json:"comments_count"`
+	IsHidden        bool                  `json:"is_hidden"`
+	ReportsCount    int                   `json:"reports_count"`
 	IsLiked         bool                  `json:"is_liked"`
 	Visibility      Visibility            `json:"visibility"`
 	CreatedAt       time.Time             `json:"created_at"`

@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/khadijayo/roamify/pkg/middleware"
 	"github.com/khadijayo/roamify/pkg/response"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
@@ -32,7 +33,7 @@ func (h *Handler) CreatePost(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	post, err := h.svc.CreatePost(userID, req)
+	post, err := h.svc.CreatePost(c.Request.Context(), userID, req)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -44,7 +45,7 @@ func (h *Handler) GetFeedV2(c *gin.Context) {
 	viewerID := middleware.GetUserID(c)
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-	posts, meta, err := h.svc.GetFeedForUser(viewerID, page, pageSize)
+	posts, meta, err := h.svc.GetFeedForUser(c.Request.Context(), viewerID, page, pageSize)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -54,12 +55,13 @@ func (h *Handler) GetFeedV2(c *gin.Context) {
 
 func (h *Handler) GetPost(c *gin.Context) {
 	viewerID := middleware.GetUserID(c)
+	viewerRole := middleware.GetUserRole(c)
 	postID, err := uuid.Parse(c.Param("postId"))
 	if err != nil {
 		response.BadRequest(c, "invalid post id")
 		return
 	}
-	post, err := h.svc.GetPost(postID, viewerID)
+	post, err := h.svc.GetPost(c.Request.Context(), postID, viewerID, viewerRole)
 	if err != nil {
 		response.NotFound(c, "post not found")
 		return
@@ -69,6 +71,7 @@ func (h *Handler) GetPost(c *gin.Context) {
 
 func (h *Handler) GetUserPosts(c *gin.Context) {
 	viewerID := middleware.GetUserID(c)
+	viewerRole := middleware.GetUserRole(c)
 	authorID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
 		response.BadRequest(c, "invalid user id")
@@ -76,7 +79,7 @@ func (h *Handler) GetUserPosts(c *gin.Context) {
 	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-	posts, meta, err := h.svc.GetUserPosts(authorID, viewerID, page, pageSize)
+	posts, meta, err := h.svc.GetUserPosts(c.Request.Context(), authorID, viewerID, viewerRole, page, pageSize)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -96,7 +99,7 @@ func (h *Handler) UpdatePost(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	post, err := h.svc.UpdatePost(postID, userID, &req)
+	post, err := h.svc.UpdatePost(c.Request.Context(), postID, userID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -111,7 +114,7 @@ func (h *Handler) DeletePost(c *gin.Context) {
 		response.BadRequest(c, "invalid post id")
 		return
 	}
-	if err := h.svc.DeletePost(postID, userID); err != nil {
+	if err := h.svc.DeletePost(c.Request.Context(), postID, userID); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -125,7 +128,7 @@ func (h *Handler) LikePost(c *gin.Context) {
 		response.BadRequest(c, "invalid post id")
 		return
 	}
-	if err := h.svc.LikePost(postID, userID); err != nil {
+	if err := h.svc.LikePost(c.Request.Context(), postID, userID); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -139,7 +142,7 @@ func (h *Handler) UnlikePost(c *gin.Context) {
 		response.BadRequest(c, "invalid post id")
 		return
 	}
-	if err := h.svc.UnlikePost(postID, userID); err != nil {
+	if err := h.svc.UnlikePost(c.Request.Context(), postID, userID); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -147,12 +150,14 @@ func (h *Handler) UnlikePost(c *gin.Context) {
 }
 
 func (h *Handler) GetComments(c *gin.Context) {
+	viewerID := middleware.GetUserID(c)
+	viewerRole := middleware.GetUserRole(c)
 	postID, err := uuid.Parse(c.Param("postId"))
 	if err != nil {
 		response.BadRequest(c, "invalid post id")
 		return
 	}
-	comments, err := h.svc.GetComments(postID)
+	comments, err := h.svc.GetComments(c.Request.Context(), postID, viewerID, viewerRole)
 	if err != nil {
 		response.NotFound(c, "post not found")
 		return
@@ -162,6 +167,7 @@ func (h *Handler) GetComments(c *gin.Context) {
 
 func (h *Handler) AddComment(c *gin.Context) {
 	userID := middleware.GetUserID(c)
+	userRole := middleware.GetUserRole(c)
 	postID, err := uuid.Parse(c.Param("postId"))
 	if err != nil {
 		response.BadRequest(c, "invalid post id")
@@ -174,12 +180,47 @@ func (h *Handler) AddComment(c *gin.Context) {
 		return
 	}
 
-	comment, err := h.svc.AddComment(postID, userID, &req)
+	comment, err := h.svc.AddComment(c.Request.Context(), postID, userID, userRole, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
 	response.Created(c, "comment created", comment)
+}
+
+func (h *Handler) DeleteComment(c *gin.Context) {
+	postID, err := uuid.Parse(c.Param("postId"))
+	if err != nil {
+		response.BadRequest(c, "invalid post id")
+		return
+	}
+
+	commentID, err := uuid.Parse(c.Query("comment_id"))
+	if err != nil {
+		response.BadRequest(c, "invalid comment_id")
+		return
+	}
+
+	err = h.svc.DeleteComment(
+		c.Request.Context(),
+		postID,
+		commentID,
+		middleware.GetUserID(c),
+		middleware.GetUserRole(c),
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			response.NotFound(c, "comment not found")
+		case err.Error() == "forbidden":
+			response.Forbidden(c, err.Error())
+		default:
+			response.BadRequest(c, err.Error())
+		}
+		return
+	}
+
+	response.OK(c, "comment deleted", gin.H{"comment_id": commentID})
 }
 
 func bindCreatePostRequest(c *gin.Context) (*CreatePostRequest, error) {

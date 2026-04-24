@@ -2,19 +2,13 @@ package users
 
 import (
 	"errors"
-	"time"
 
 	"github.com/google/uuid"
-	pkgjwt "github.com/khadijayo/roamify/pkg/jwt"
 	"github.com/lib/pq"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type Service interface {
-	Register(req *RegisterRequest) (*AuthResponse, error)
-	Login(req *LoginRequest) (*AuthResponse, error)
-	SocialAuth(req *SocialAuthRequest) (*AuthResponse, error)
 	GetProfile(userID uuid.UUID) (*User, error)
 	UpdateProfile(userID uuid.UUID, req *UpdateProfileRequest) (*User, error)
 	GetVibeProfile(userID uuid.UUID) (*VibeProfile, error)
@@ -30,126 +24,11 @@ type Service interface {
 }
 
 type service struct {
-	repo           Repository
-	jwtSecret      string
-	jwtExpiryHours int
+	repo Repository
 }
 
-func NewService(repo Repository, jwtSecret string, jwtExpiryHours int) Service {
-	return &service{
-		repo:           repo,
-		jwtSecret:      jwtSecret,
-		jwtExpiryHours: jwtExpiryHours,
-	}
-}
-
-func (s *service) Register(req *RegisterRequest) (*AuthResponse, error) {
-	existing, err := s.repo.FindByEmail(req.Email)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-	if existing != nil {
-		return nil, errors.New("email already registered")
-	}
-
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-
-	hashStr := string(hash)
-	email := req.Email
-	user := &User{
-		FullName:     req.FullName,
-		Email:        &email,
-		PasswordHash: &hashStr,
-		Status:       StatusActive,
-	}
-
-	if err := s.repo.CreateUser(user); err != nil {
-		return nil, err
-	}
-
-	token, err := pkgjwt.Generate(user.ID, req.Email, s.jwtSecret, s.jwtExpiryHours)
-	if err != nil {
-		return nil, err
-	}
-
-	return &AuthResponse{Token: token, User: user}, nil
-}
-
-func (s *service) Login(req *LoginRequest) (*AuthResponse, error) {
-	user, err := s.repo.FindByEmail(req.Email)
-	if err != nil {
-		return nil, errors.New("invalid email or password")
-	}
-	if user.PasswordHash == nil {
-		return nil, errors.New("this account uses social login")
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(*user.PasswordHash), []byte(req.Password)); err != nil {
-		return nil, errors.New("invalid email or password")
-	}
-
-	now := time.Now()
-	user.LastLoginAt = &now
-	_ = s.repo.UpdateUser(user)
-
-	token, err := pkgjwt.Generate(user.ID, *user.Email, s.jwtSecret, s.jwtExpiryHours)
-	if err != nil {
-		return nil, err
-	}
-
-	return &AuthResponse{Token: token, User: user}, nil
-}
-
-func (s *service) SocialAuth(req *SocialAuthRequest) (*AuthResponse, error) {
-	user, err := s.repo.FindByProvider(req.Provider, req.ProviderUserID)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
-	if user == nil {
-		if req.Email != nil {
-			existingByEmail, emailErr := s.repo.FindByEmail(*req.Email)
-			if emailErr == nil && existingByEmail != nil {
-				provider := req.Provider
-				existingByEmail.AuthProvider = &provider
-				existingByEmail.ProviderID = &req.ProviderUserID
-				if req.AvatarURL != nil {
-					existingByEmail.AvatarURL = req.AvatarURL
-				}
-				if err := s.repo.UpdateUser(existingByEmail); err != nil {
-					return nil, err
-				}
-				user = existingByEmail
-			}
-		}
-
-		if user == nil {
-			provider := req.Provider
-			user = &User{
-				FullName:     req.FullName,
-				Email:        req.Email,
-				AvatarURL:    req.AvatarURL,
-				AuthProvider: &provider,
-				ProviderID:   &req.ProviderUserID,
-				Status:       StatusActive,
-			}
-			if err := s.repo.CreateUser(user); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	emailForToken := "social-auth@roamify.local"
-	if user.Email != nil {
-		emailForToken = *user.Email
-	}
-	token, err := pkgjwt.Generate(user.ID, emailForToken, s.jwtSecret, s.jwtExpiryHours)
-	if err != nil {
-		return nil, err
-	}
-	return &AuthResponse{Token: token, User: user}, nil
+func NewService(repo Repository) Service {
+	return &service{repo: repo}
 }
 
 func (s *service) GetProfile(userID uuid.UUID) (*User, error) {

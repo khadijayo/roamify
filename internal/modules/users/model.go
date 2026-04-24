@@ -9,26 +9,35 @@ import (
 )
 
 type UserStatus string
+type UserRole string
 
 const (
 	StatusActive    UserStatus = "active"
 	StatusSuspended UserStatus = "suspended"
 	StatusDeleted   UserStatus = "deleted"
+
+	RoleUser  UserRole = "user"
+	RoleAdmin UserRole = "admin"
 )
 
 type User struct {
-	ID           uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	Email        *string        `gorm:"type:varchar(255);uniqueIndex"                  json:"email"`
-	FullName     string         `gorm:"type:varchar(255);not null"                     json:"full_name"`
-	AvatarURL    *string        `gorm:"type:text"                                      json:"avatar_url"`
-	PasswordHash *string        `gorm:"type:text"                                      json:"-"`
-	AuthProvider *string        `gorm:"type:varchar(50)"                               json:"auth_provider,omitempty"`
-	ProviderID   *string        `gorm:"type:varchar(255)"                              json:"provider_id,omitempty"`
-	Status       UserStatus     `gorm:"type:varchar(20);default:'active'"              json:"status"`
-	LastLoginAt  *time.Time     `                                                      json:"last_login_at"`
-	CreatedAt    time.Time      `                                                      json:"created_at"`
-	UpdatedAt    time.Time      `                                                      json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `gorm:"index"                                          json:"-"`
+	ID                uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	Email             *string        `gorm:"type:varchar(255);uniqueIndex"                  json:"email"`
+	FullName          string         `gorm:"type:varchar(255);not null"                     json:"full_name"`
+	AvatarURL         *string        `gorm:"type:text"                                      json:"avatar_url"`
+	PasswordHash      *string        `gorm:"type:text"                                      json:"-"`
+	AuthProvider      *string        `gorm:"type:varchar(50)"                               json:"auth_provider,omitempty"`
+	ProviderID        *string        `gorm:"type:varchar(255)"                              json:"provider_id,omitempty"`
+	Role              UserRole       `gorm:"type:varchar(20);default:'user';not null"       json:"role"`
+	Status            UserStatus     `gorm:"type:varchar(20);default:'active'"              json:"status"`
+	IsBanned          bool           `gorm:"default:false;not null"                         json:"is_banned"`
+	IsVerified        bool           `gorm:"default:false;not null"                         json:"is_verified"`
+	VerificationToken *string        `gorm:"type:text;index"                                json:"-"`
+	TokenExpiresAt    *time.Time     `                                                      json:"-"`
+	LastLoginAt       *time.Time     `                                                      json:"last_login_at"`
+	CreatedAt         time.Time      `                                                      json:"created_at"`
+	UpdatedAt         time.Time      `                                                      json:"updated_at"`
+	DeletedAt         gorm.DeletedAt `gorm:"index"                                          json:"-"`
 
 	VibeProfile *VibeProfile `gorm:"foreignKey:UserID"             json:"vibe_profile,omitempty"`
 }

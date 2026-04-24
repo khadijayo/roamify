@@ -11,6 +11,7 @@ func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
 		p.GET("/", h.GetFeedV2)
 		p.GET("/:postId/comments", h.GetComments)
 		p.POST("/:postId/comments", h.AddComment)
+		p.DELETE("/:postId/comments", h.DeleteComment)
 		p.GET("/:postId", h.GetPost)
 		p.PATCH("/:postId", h.UpdatePost)
 		p.DELETE("/:postId", h.DeletePost)

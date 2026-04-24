@@ -22,6 +22,13 @@ type Config struct {
 	JWTExpiryHours int
 	AppEnv         string
 	GrokKey        string
+	AppBaseURL     string
+	SMTPHost       string
+	SMTPPort       string
+	SMTPUsername   string
+	SMTPPassword   string
+	SMTPFromEmail  string
+	SMTPFromName   string
 }
 
 var App *Config
@@ -46,6 +53,13 @@ func Load() {
 		JWTExpiryHours: expiry,
 		AppEnv:         getEnv("APP_ENV", "development"),
 		GrokKey:        getEnv("GROK_KEY", ""),
+		AppBaseURL:     getEnv("APP_BASE_URL", "http://localhost:8080"),
+		SMTPHost:       getEnv("SMTP_HOST", ""),
+		SMTPPort:       getEnv("SMTP_PORT", "587"),
+		SMTPUsername:   getEnv("SMTP_USERNAME", ""),
+		SMTPPassword:   getEnv("SMTP_PASSWORD", ""),
+		SMTPFromEmail:  getEnv("SMTP_FROM_EMAIL", ""),
+		SMTPFromName:   getEnv("SMTP_FROM_NAME", "Roamify"),
 	}
 }
 

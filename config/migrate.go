@@ -7,6 +7,7 @@ import (
 	"github.com/khadijayo/roamify/internal/modules/notifications"
 	"github.com/khadijayo/roamify/internal/modules/passport"
 	"github.com/khadijayo/roamify/internal/modules/posts"
+	"github.com/khadijayo/roamify/internal/modules/reports"
 	"github.com/khadijayo/roamify/internal/modules/trips"
 	"github.com/khadijayo/roamify/internal/modules/users"
 	"github.com/khadijayo/roamify/internal/modules/wishlist"
@@ -39,6 +40,7 @@ func AutoMigrate() {
 		&posts.PostTag{},
 		&posts.PostLike{},
 		&posts.PostComment{},
+		&reports.Report{},
 
 		// Wishlist / vault
 		&wishlist.WishlistItem{},

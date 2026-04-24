@@ -22,15 +22,15 @@ type Meta struct {
 }
 
 func OK(c *gin.Context, message string, data interface{}) {
-	c.JSON(http.StatusOK, APIResponse{Success: true, Message: message, Data: data})
+	c.JSON(http.StatusOK, APIResponse{Success: true, Data: data})
 }
 
 func Created(c *gin.Context, message string, data interface{}) {
-	c.JSON(http.StatusCreated, APIResponse{Success: true, Message: message, Data: data})
+	c.JSON(http.StatusCreated, APIResponse{Success: true, Data: data})
 }
 
 func OKPaginated(c *gin.Context, message string, data interface{}, meta *Meta) {
-	c.JSON(http.StatusOK, APIResponse{Success: true, Message: message, Data: data, Meta: meta})
+	c.JSON(http.StatusOK, APIResponse{Success: true, Data: data, Meta: meta})
 }
 
 func BadRequest(c *gin.Context, err string) {

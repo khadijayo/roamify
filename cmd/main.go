@@ -9,14 +9,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/khadijayo/roamify/config"
+	"github.com/khadijayo/roamify/internal/modules/admin"
+	roamauth "github.com/khadijayo/roamify/internal/modules/auth"
 	"github.com/khadijayo/roamify/internal/modules/challenges"
 	"github.com/khadijayo/roamify/internal/modules/discovery"
 	"github.com/khadijayo/roamify/internal/modules/notifications"
 	"github.com/khadijayo/roamify/internal/modules/passport"
 	"github.com/khadijayo/roamify/internal/modules/posts"
+	"github.com/khadijayo/roamify/internal/modules/reports"
 	"github.com/khadijayo/roamify/internal/modules/trips"
 	"github.com/khadijayo/roamify/internal/modules/users"
 	"github.com/khadijayo/roamify/internal/modules/wishlist"
+	emailsvc "github.com/khadijayo/roamify/internal/services/email"
 	"github.com/khadijayo/roamify/pkg/middleware"
 )
 
@@ -25,35 +29,7 @@ func main() {
 	config.Load()
 	config.ConnectDB()
 
-	db := config.DB
-	if err := db.AutoMigrate(
-		&users.User{},
-		&users.VibeProfile{},
-		&users.UserFollow{},
-		&users.UserPrivacySetting{},
-		&notifications.UserNotificationSetting{},
-		&trips.Trip{},
-		&trips.TripMember{},
-		&trips.TripItineraryItem{},
-		&trips.TripExpense{},
-		&trips.ChatMessage{},
-		&posts.Post{},
-		&posts.PostTag{},
-		&posts.PostLike{},
-		&posts.PostComment{},
-		&wishlist.WishlistItem{},
-		&wishlist.WishlistCollection{},
-		&wishlist.WishlistCollectionItem{},
-		&challenges.Challenge{},
-		&challenges.UserChallengeProgress{},
-		&challenges.TriviaQuestion{},
-		&challenges.TriviaAttempt{},
-		&passport.PassportVaultRecord{},
-		&passport.PassportStamp{},
-	); err != nil {
-		log.Fatalf("[migrate] AutoMigrate failed: %v", err)
-	}
-	log.Println("[migrate] all tables migrated successfully")
+	config.AutoMigrate()
 
 	// 2. Set Gin mode
 	if config.App.AppEnv == "production" {
@@ -143,10 +119,16 @@ func resolveSwaggerDir() (string, error) {
 // wireModules registers all modules
 func wireModules(api *gin.RouterGroup) {
 	db := config.DB
-	auth := middleware.Auth(config.App.JWTSecret)
+	auth := middleware.Auth(config.App.JWTSecret, db)
+
+	emailService := emailsvc.NewService(config.App)
+	authRepo := roamauth.NewRepository(db)
+	authSvc := roamauth.NewService(authRepo, emailService, config.App)
+	authHandler := roamauth.NewHandler(authSvc)
+	roamauth.RegisterRoutes(api, authHandler)
 
 	userRepo := users.NewRepository(db)
-	userSvc := users.NewService(userRepo, config.App.JWTSecret, config.App.JWTExpiryHours)
+	userSvc := users.NewService(userRepo)
 	userHandler := users.NewHandler(userSvc)
 	users.RegisterRoutes(api, userHandler, auth)
 
@@ -170,6 +152,16 @@ func wireModules(api *gin.RouterGroup) {
 	postSvc := posts.NewService(postRepo)
 	postHandler := posts.NewHandler(postSvc)
 	posts.RegisterRoutes(api, postHandler, auth)
+
+	reportRepo := reports.NewRepository(db)
+	reportSvc := reports.NewService(reportRepo)
+	reportHandler := reports.NewHandler(reportSvc)
+	reports.RegisterRoutes(api, reportHandler, auth)
+
+	adminRepo := admin.NewRepository(db)
+	adminSvc := admin.NewService(adminRepo)
+	adminHandler := admin.NewHandler(adminSvc)
+	admin.RegisterRoutes(api, adminHandler, auth)
 
 	wishlistRepo := wishlist.NewRepository(db)
 	wishlistSvc := wishlist.NewService(wishlistRepo)

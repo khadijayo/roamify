@@ -1,27 +1,30 @@
 package posts
 
 import (
+	"context"
 	"errors"
 	"math"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/khadijayo/roamify/internal/modules/users"
 	"github.com/khadijayo/roamify/pkg/response"
 	"gorm.io/gorm"
 )
 
 type Service interface {
-	CreatePost(authorID uuid.UUID, req *CreatePostRequest) (*PostResponse, error)
-	GetPost(id, viewerID uuid.UUID) (*PostResponse, error)
-	GetFeed(page, pageSize int) ([]PostResponse, *response.Meta, error)
-	GetFeedForUser(viewerID uuid.UUID, page, pageSize int) ([]PostResponse, *response.Meta, error)
-	GetUserPosts(authorID, viewerID uuid.UUID, page, pageSize int) ([]PostResponse, *response.Meta, error)
-	UpdatePost(postID, authorID uuid.UUID, req *UpdatePostRequest) (*PostResponse, error)
-	DeletePost(postID, authorID uuid.UUID) error
-	LikePost(postID, userID uuid.UUID) error
-	UnlikePost(postID, userID uuid.UUID) error
-	GetComments(postID uuid.UUID) ([]PostCommentResponse, error)
-	AddComment(postID, userID uuid.UUID, req *CreateCommentRequest) (*PostCommentResponse, error)
+	CreatePost(ctx context.Context, authorID uuid.UUID, req *CreatePostRequest) (*PostResponse, error)
+	GetPost(ctx context.Context, id, viewerID uuid.UUID, viewerRole string) (*PostResponse, error)
+	GetFeed(ctx context.Context, page, pageSize int) ([]PostResponse, *response.Meta, error)
+	GetFeedForUser(ctx context.Context, viewerID uuid.UUID, page, pageSize int) ([]PostResponse, *response.Meta, error)
+	GetUserPosts(ctx context.Context, authorID, viewerID uuid.UUID, viewerRole string, page, pageSize int) ([]PostResponse, *response.Meta, error)
+	UpdatePost(ctx context.Context, postID, authorID uuid.UUID, req *UpdatePostRequest) (*PostResponse, error)
+	DeletePost(ctx context.Context, postID, authorID uuid.UUID) error
+	LikePost(ctx context.Context, postID, userID uuid.UUID) error
+	UnlikePost(ctx context.Context, postID, userID uuid.UUID) error
+	GetComments(ctx context.Context, postID, viewerID uuid.UUID, viewerRole string) ([]PostCommentResponse, error)
+	AddComment(ctx context.Context, postID, userID uuid.UUID, userRole string, req *CreateCommentRequest) (*PostCommentResponse, error)
+	DeleteComment(ctx context.Context, postID, commentID, actorID uuid.UUID, actorRole string) error
 }
 
 type service struct {
@@ -32,7 +35,7 @@ func NewService(repo Repository) Service {
 	return &service{repo: repo}
 }
 
-func (s *service) CreatePost(authorID uuid.UUID, req *CreatePostRequest) (*PostResponse, error) {
+func (s *service) CreatePost(ctx context.Context, authorID uuid.UUID, req *CreatePostRequest) (*PostResponse, error) {
 	vis := req.Visibility
 	if vis == "" {
 		vis = VisibilityPublic
@@ -48,7 +51,7 @@ func (s *service) CreatePost(authorID uuid.UUID, req *CreatePostRequest) (*PostR
 		ImageURL:     req.ImageURL,
 		Visibility:   vis,
 	}
-	if err := s.repo.CreatePost(post); err != nil {
+	if err := s.repo.CreatePost(ctx, post); err != nil {
 		return nil, err
 	}
 	if len(req.Tags) > 0 {
@@ -61,21 +64,24 @@ func (s *service) CreatePost(authorID uuid.UUID, req *CreatePostRequest) (*PostR
 			tags = append(tags, PostTag{PostID: post.ID, Tag: tag})
 		}
 		if len(tags) > 0 {
-			_ = s.repo.AddTags(tags)
+			_ = s.repo.AddTags(ctx, tags)
 		}
 	}
-	return s.GetPost(post.ID, authorID)
+	return s.GetPost(ctx, post.ID, authorID, string(users.RoleUser))
 }
 
-func (s *service) GetPost(id, viewerID uuid.UUID) (*PostResponse, error) {
-	post, err := s.repo.FindPostByID(id)
+func (s *service) GetPost(ctx context.Context, id, viewerID uuid.UUID, viewerRole string) (*PostResponse, error) {
+	post, err := s.repo.FindPostByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return s.buildPostResponse(post, viewerID, true)
+	if post.IsHidden && viewerRole != string(users.RoleAdmin) && post.AuthorUserID != viewerID {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return s.buildPostResponse(ctx, post, viewerID, viewerRole, true)
 }
 
-func (s *service) GetFeed(page, pageSize int) ([]PostResponse, *response.Meta, error) {
+func (s *service) GetFeed(ctx context.Context, page, pageSize int) ([]PostResponse, *response.Meta, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -83,11 +89,11 @@ func (s *service) GetFeed(page, pageSize int) ([]PostResponse, *response.Meta, e
 		pageSize = 20
 	}
 	offset := (page - 1) * pageSize
-	posts, total, err := s.repo.FindFeed(pageSize, offset)
+	posts, total, err := s.repo.FindFeed(ctx, pageSize, offset)
 	if err != nil {
 		return nil, nil, err
 	}
-	items, err := s.buildPostResponses(posts, uuid.Nil, false)
+	items, err := s.buildPostResponses(ctx, posts, uuid.Nil, "", false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -100,7 +106,7 @@ func (s *service) GetFeed(page, pageSize int) ([]PostResponse, *response.Meta, e
 	return items, meta, nil
 }
 
-func (s *service) GetFeedForUser(viewerID uuid.UUID, page, pageSize int) ([]PostResponse, *response.Meta, error) {
+func (s *service) GetFeedForUser(ctx context.Context, viewerID uuid.UUID, page, pageSize int) ([]PostResponse, *response.Meta, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -108,11 +114,11 @@ func (s *service) GetFeedForUser(viewerID uuid.UUID, page, pageSize int) ([]Post
 		pageSize = 20
 	}
 	offset := (page - 1) * pageSize
-	posts, total, err := s.repo.FindFeedForUser(viewerID, pageSize, offset)
+	posts, total, err := s.repo.FindFeedForUser(ctx, viewerID, pageSize, offset)
 	if err != nil {
 		return nil, nil, err
 	}
-	items, err := s.buildPostResponses(posts, viewerID, false)
+	items, err := s.buildPostResponses(ctx, posts, viewerID, string(users.RoleUser), false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -125,7 +131,7 @@ func (s *service) GetFeedForUser(viewerID uuid.UUID, page, pageSize int) ([]Post
 	return items, meta, nil
 }
 
-func (s *service) GetUserPosts(authorID, viewerID uuid.UUID, page, pageSize int) ([]PostResponse, *response.Meta, error) {
+func (s *service) GetUserPosts(ctx context.Context, authorID, viewerID uuid.UUID, viewerRole string, page, pageSize int) ([]PostResponse, *response.Meta, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -133,11 +139,12 @@ func (s *service) GetUserPosts(authorID, viewerID uuid.UUID, page, pageSize int)
 		pageSize = 20
 	}
 	offset := (page - 1) * pageSize
-	posts, total, err := s.repo.FindByAuthor(authorID, pageSize, offset)
+	includeHidden := viewerRole == string(users.RoleAdmin) || authorID == viewerID
+	posts, total, err := s.repo.FindByAuthor(ctx, authorID, pageSize, offset, includeHidden)
 	if err != nil {
 		return nil, nil, err
 	}
-	items, err := s.buildPostResponses(posts, viewerID, false)
+	items, err := s.buildPostResponses(ctx, posts, viewerID, viewerRole, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -150,8 +157,8 @@ func (s *service) GetUserPosts(authorID, viewerID uuid.UUID, page, pageSize int)
 	return items, meta, nil
 }
 
-func (s *service) UpdatePost(postID, authorID uuid.UUID, req *UpdatePostRequest) (*PostResponse, error) {
-	post, err := s.repo.FindPostByID(postID)
+func (s *service) UpdatePost(ctx context.Context, postID, authorID uuid.UUID, req *UpdatePostRequest) (*PostResponse, error) {
+	post, err := s.repo.FindPostByID(ctx, postID)
 	if err != nil {
 		return nil, err
 	}
@@ -170,28 +177,28 @@ func (s *service) UpdatePost(postID, authorID uuid.UUID, req *UpdatePostRequest)
 	if req.Visibility != "" {
 		post.Visibility = req.Visibility
 	}
-	if err := s.repo.UpdatePost(post); err != nil {
+	if err := s.repo.UpdatePost(ctx, post); err != nil {
 		return nil, err
 	}
-	return s.GetPost(post.ID, authorID)
+	return s.GetPost(ctx, post.ID, authorID, string(users.RoleUser))
 }
 
-func (s *service) DeletePost(postID, authorID uuid.UUID) error {
-	post, err := s.repo.FindPostByID(postID)
+func (s *service) DeletePost(ctx context.Context, postID, authorID uuid.UUID) error {
+	post, err := s.repo.FindPostByID(ctx, postID)
 	if err != nil {
 		return err
 	}
 	if post.AuthorUserID != authorID {
 		return errors.New("not authorized to delete this post")
 	}
-	return s.repo.DeletePost(postID)
+	return s.repo.DeletePost(ctx, postID)
 }
 
-func (s *service) LikePost(postID, userID uuid.UUID) error {
-	if _, err := s.repo.FindPostByID(postID); err != nil {
+func (s *service) LikePost(ctx context.Context, postID, userID uuid.UUID) error {
+	if _, err := s.repo.FindPostByID(ctx, postID); err != nil {
 		return err
 	}
-	_, err := s.repo.FindLike(postID, userID)
+	_, err := s.repo.FindLike(ctx, postID, userID)
 	if err == nil {
 		return errors.New("already liked")
 	}
@@ -199,50 +206,58 @@ func (s *service) LikePost(postID, userID uuid.UUID) error {
 		return err
 	}
 	like := &PostLike{PostID: postID, UserID: userID}
-	if err := s.repo.AddLike(like); err != nil {
+	if err := s.repo.AddLike(ctx, like); err != nil {
 		return err
 	}
-	if err := s.repo.IncrementLikes(postID); err != nil {
-		_ = s.repo.RefreshLikesCount(postID)
+	if err := s.repo.IncrementLikes(ctx, postID); err != nil {
+		_ = s.repo.RefreshLikesCount(ctx, postID)
 		return err
 	}
-	return s.repo.RefreshLikesCount(postID)
+	return s.repo.RefreshLikesCount(ctx, postID)
 }
 
-func (s *service) UnlikePost(postID, userID uuid.UUID) error {
-	if _, err := s.repo.FindPostByID(postID); err != nil {
+func (s *service) UnlikePost(ctx context.Context, postID, userID uuid.UUID) error {
+	if _, err := s.repo.FindPostByID(ctx, postID); err != nil {
 		return err
 	}
-	if _, err := s.repo.FindLike(postID, userID); err != nil {
+	if _, err := s.repo.FindLike(ctx, postID, userID); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("post not liked yet")
 		}
 		return err
 	}
-	if err := s.repo.RemoveLike(postID, userID); err != nil {
+	if err := s.repo.RemoveLike(ctx, postID, userID); err != nil {
 		return err
 	}
-	if err := s.repo.DecrementLikes(postID); err != nil {
-		_ = s.repo.RefreshLikesCount(postID)
+	if err := s.repo.DecrementLikes(ctx, postID); err != nil {
+		_ = s.repo.RefreshLikesCount(ctx, postID)
 		return err
 	}
-	return s.repo.RefreshLikesCount(postID)
+	return s.repo.RefreshLikesCount(ctx, postID)
 }
 
-func (s *service) GetComments(postID uuid.UUID) ([]PostCommentResponse, error) {
-	if _, err := s.repo.FindPostByID(postID); err != nil {
-		return nil, err
-	}
-	comments, err := s.repo.FindCommentsByPost(postID)
+func (s *service) GetComments(ctx context.Context, postID, viewerID uuid.UUID, viewerRole string) ([]PostCommentResponse, error) {
+	post, err := s.repo.FindPostByID(ctx, postID)
 	if err != nil {
 		return nil, err
 	}
-	return s.buildCommentResponses(comments)
+	if post.IsHidden && viewerRole != string(users.RoleAdmin) && post.AuthorUserID != viewerID {
+		return nil, gorm.ErrRecordNotFound
+	}
+	comments, err := s.repo.FindCommentsByPost(ctx, postID)
+	if err != nil {
+		return nil, err
+	}
+	return s.buildCommentResponses(ctx, comments)
 }
 
-func (s *service) AddComment(postID, userID uuid.UUID, req *CreateCommentRequest) (*PostCommentResponse, error) {
-	if _, err := s.repo.FindPostByID(postID); err != nil {
+func (s *service) AddComment(ctx context.Context, postID, userID uuid.UUID, userRole string, req *CreateCommentRequest) (*PostCommentResponse, error) {
+	post, err := s.repo.FindPostByID(ctx, postID)
+	if err != nil {
 		return nil, err
+	}
+	if post.IsHidden && userRole != string(users.RoleAdmin) && post.AuthorUserID != userID {
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	content := strings.TrimSpace(req.Content)
@@ -255,11 +270,11 @@ func (s *service) AddComment(postID, userID uuid.UUID, req *CreateCommentRequest
 		UserID:  userID,
 		Content: content,
 	}
-	if err := s.repo.AddComment(comment); err != nil {
+	if err := s.repo.AddComment(ctx, comment); err != nil {
 		return nil, err
 	}
 
-	comments, err := s.buildCommentResponses([]PostComment{*comment})
+	comments, err := s.buildCommentResponses(ctx, []PostComment{*comment})
 	if err != nil {
 		return nil, err
 	}
@@ -269,8 +284,27 @@ func (s *service) AddComment(postID, userID uuid.UUID, req *CreateCommentRequest
 	return &comments[0], nil
 }
 
-func (s *service) buildPostResponse(post *Post, viewerID uuid.UUID, includeComments bool) (*PostResponse, error) {
-	posts, err := s.buildPostResponses([]Post{*post}, viewerID, includeComments)
+func (s *service) DeleteComment(ctx context.Context, postID, commentID, actorID uuid.UUID, actorRole string) error {
+	if _, err := s.repo.FindPostByID(ctx, postID); err != nil {
+		return err
+	}
+
+	comment, err := s.repo.FindCommentByID(ctx, commentID)
+	if err != nil {
+		return err
+	}
+	if comment.PostID != postID {
+		return gorm.ErrRecordNotFound
+	}
+	if comment.UserID != actorID && actorRole != string(users.RoleAdmin) {
+		return errors.New("forbidden")
+	}
+
+	return s.repo.DeleteComment(ctx, commentID)
+}
+
+func (s *service) buildPostResponse(ctx context.Context, post *Post, viewerID uuid.UUID, viewerRole string, includeComments bool) (*PostResponse, error) {
+	posts, err := s.buildPostResponses(ctx, []Post{*post}, viewerID, viewerRole, includeComments)
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +314,7 @@ func (s *service) buildPostResponse(post *Post, viewerID uuid.UUID, includeComme
 	return &posts[0], nil
 }
 
-func (s *service) buildPostResponses(posts []Post, viewerID uuid.UUID, includeComments bool) ([]PostResponse, error) {
+func (s *service) buildPostResponses(ctx context.Context, posts []Post, viewerID uuid.UUID, viewerRole string, includeComments bool) ([]PostResponse, error) {
 	responses := make([]PostResponse, 0, len(posts))
 	if len(posts) == 0 {
 		return responses, nil
@@ -297,19 +331,19 @@ func (s *service) buildPostResponses(posts []Post, viewerID uuid.UUID, includeCo
 		}
 	}
 
-	authors, err := s.repo.FindAuthorSummaries(authorIDs)
+	authors, err := s.repo.FindAuthorSummaries(ctx, authorIDs)
 	if err != nil {
 		return nil, err
 	}
-	likeCounts, err := s.repo.FindLikeCounts(postIDs)
+	likeCounts, err := s.repo.FindLikeCounts(ctx, postIDs)
 	if err != nil {
 		return nil, err
 	}
-	commentCounts, err := s.repo.FindCommentCounts(postIDs)
+	commentCounts, err := s.repo.FindCommentCounts(ctx, postIDs)
 	if err != nil {
 		return nil, err
 	}
-	likedPostIDs, err := s.repo.FindLikedPostIDs(postIDs, viewerID)
+	likedPostIDs, err := s.repo.FindLikedPostIDs(ctx, postIDs, viewerID)
 	if err != nil {
 		return nil, err
 	}
@@ -317,7 +351,7 @@ func (s *service) buildPostResponses(posts []Post, viewerID uuid.UUID, includeCo
 	commentsByPost := make(map[uuid.UUID][]PostCommentResponse)
 	if includeComments {
 		for _, post := range posts {
-			comments, err := s.GetComments(post.ID)
+			comments, err := s.GetComments(ctx, post.ID, viewerID, viewerRole)
 			if err != nil {
 				return nil, err
 			}
@@ -338,6 +372,8 @@ func (s *service) buildPostResponses(posts []Post, viewerID uuid.UUID, includeCo
 			ImageURL:        post.ImageURL,
 			LikesCount:      likeCounts[post.ID],
 			CommentsCount:   commentCounts[post.ID],
+			IsHidden:        post.IsHidden,
+			ReportsCount:    post.ReportsCount,
 			IsLiked:         likedPostIDs[post.ID],
 			Visibility:      post.Visibility,
 			CreatedAt:       post.CreatedAt,
@@ -351,7 +387,7 @@ func (s *service) buildPostResponses(posts []Post, viewerID uuid.UUID, includeCo
 	return responses, nil
 }
 
-func (s *service) buildCommentResponses(comments []PostComment) ([]PostCommentResponse, error) {
+func (s *service) buildCommentResponses(ctx context.Context, comments []PostComment) ([]PostCommentResponse, error) {
 	responses := make([]PostCommentResponse, 0, len(comments))
 	if len(comments) == 0 {
 		return responses, nil
@@ -366,7 +402,7 @@ func (s *service) buildCommentResponses(comments []PostComment) ([]PostCommentRe
 		}
 	}
 
-	authors, err := s.repo.FindAuthorSummaries(authorIDs)
+	authors, err := s.repo.FindAuthorSummaries(ctx, authorIDs)
 	if err != nil {
 		return nil, err
 	}

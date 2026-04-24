@@ -8,7 +8,7 @@ app
 # Build folders
 /bin
 /build
-
+.gocache
 # Environment files
 .env
 
@@ -18,3 +18,5 @@ app
 
 # OS
 .DS_Store
+
+uploads/
