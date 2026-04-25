@@ -34,42 +34,41 @@ type Config struct {
 var App *Config
 
 func Load() {
-
-	if os.Getenv("RENDER") == "" {
-		if err := godotenv.Load(); err != nil {
-			log.Println("[config] no .env file found, reading from environment")
-		}
-	}
-
-	expiry, _ := strconv.Atoi(getEnv("JWT_EXPIRY_HOURS", "72"))
-
-	App = &Config{
-		Port:           getEnv("PORT", "8080"),
-		DatabaseURL:    getEnv("DATABASE_URL", ""),
-		DBHost:         getEnv("DB_HOST", "localhost"),
-		DBPort:         getEnv("DB_PORT", "5432"),
-		DBUser:         getEnv("DB_USER", "postgres"),
-		DBPassword:     getEnv("DB_PASSWORD", ""),
-		DBName:         getEnv("DB_NAME", "roamify"),
-		DBSSLMode:      getEnv("DB_SSLMODE", "disable"),
-		JWTSecret:      getEnv("JWT_SECRET", "change-me-in-production"),
-		JWTExpiryHours: expiry,
-		AppEnv:         getEnv("APP_ENV", "development"),
-		GrokKey:        getEnv("GROK_KEY", ""),
-		// In config/config.go, modify the AppBaseURL initialization:
-AppBaseURL: getEnv("APP_BASE_URL", func() string {
-    if port := getEnv("PORT", ""); port != "" {
-        return fmt.Sprintf("https://%s.onrender.com", getEnv("RENDER_SERVICE_NAME", "your-service-name"))
+    if os.Getenv("RENDER") == "" {
+        if err := godotenv.Load(); err != nil {
+            log.Println("[config] no .env file found, reading from environment")
+        }
     }
-    return "http://localhost:8080"
-}()),
-		SMTPHost:       getEnv("SMTP_HOST", ""),
-		SMTPPort:       getEnv("SMTP_PORT", "587"),
-		SMTPUsername:   getEnv("SMTP_USERNAME", ""),
-		SMTPPassword:   getEnv("SMTP_PASSWORD", ""),
-		SMTPFromEmail:  getEnv("SMTP_FROM_EMAIL", ""),
-		SMTPFromName:   getEnv("SMTP_FROM_NAME", "Roamify"),
-	}
+
+    expiry, _ := strconv.Atoi(getEnv("JWT_EXPIRY_HOURS", "72"))
+
+    // Compute AppBaseURL default value before struct initialization
+    appBaseURLDefault := "http://localhost:8080"
+    if port := getEnv("PORT", ""); port != "" {
+        appBaseURLDefault = fmt.Sprintf("https://%s.onrender.com", getEnv("RENDER_SERVICE_NAME", "your-service-name"))
+    }
+
+    App = &Config{
+        Port:           getEnv("PORT", "8080"),
+        DatabaseURL:    getEnv("DATABASE_URL", ""),
+        DBHost:         getEnv("DB_HOST", "localhost"),
+        DBPort:         getEnv("DB_PORT", "5432"),
+        DBUser:         getEnv("DB_USER", "postgres"),
+        DBPassword:     getEnv("DB_PASSWORD", ""),
+        DBName:         getEnv("DB_NAME", "roamify"),
+        DBSSLMode:      getEnv("DB_SSLMODE", "disable"),
+        JWTSecret:      getEnv("JWT_SECRET", "change-me-in-production"),
+        JWTExpiryHours: expiry,
+        AppEnv:         getEnv("APP_ENV", "development"),
+        GrokKey:        getEnv("GROK_KEY", ""),
+        AppBaseURL:     getEnv("APP_BASE_URL", appBaseURLDefault),
+        SMTPHost:       getEnv("SMTP_HOST", ""),
+        SMTPPort:       getEnv("SMTP_PORT", "587"),
+        SMTPUsername:   getEnv("SMTP_USERNAME", ""),
+        SMTPPassword:   getEnv("SMTP_PASSWORD", ""),
+        SMTPFromEmail:  getEnv("SMTP_FROM_EMAIL", ""),
+        SMTPFromName:   getEnv("SMTP_FROM_NAME", "Roamify"),
+    }
 }
 
 func (c *Config) DSN() string {
