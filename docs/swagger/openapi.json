@@ -5,7 +5,7 @@
     "version": "1.1.0",
     "description": "Full API docs for all currently registered routes."
   },
-  "servers": [{ "url": "http://localhost:8080" }],
+  "servers": [{ "url": "https://roamify-f9v5.onrender.com" }],
   "security": [{ "bearerAuth": [] }],
   "paths": {
     "/health": {"get": {"summary": "Health check", "security": [], "responses": {"200": {"description": "OK"}}}},
