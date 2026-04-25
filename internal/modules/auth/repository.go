@@ -2,9 +2,12 @@ package auth
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/khadijayo/roamify/internal/modules/users"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -26,7 +29,16 @@ func NewRepository(db *gorm.DB) Repository {
 }
 
 func (r *repository) CreateUser(ctx context.Context, user *users.User) error {
-	return r.db.WithContext(ctx).Create(user).Error
+	err := r.db.WithContext(ctx).Create(user).Error
+	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			if strings.Contains(pqErr.Constraint, "email") || strings.Contains(pqErr.Detail, "email") {
+				return ErrEmailAlreadyRegistered
+			}
+		}
+	}
+	return err
 }
 
 func (r *repository) UpdateUser(ctx context.Context, user *users.User) error {
