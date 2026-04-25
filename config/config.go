@@ -34,8 +34,11 @@ type Config struct {
 var App *Config
 
 func Load() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("[config] no .env file found, reading from environment")
+
+	if os.Getenv("RENDER") == "" {
+		if err := godotenv.Load(); err != nil {
+			log.Println("[config] no .env file found, reading from environment")
+		}
 	}
 
 	expiry, _ := strconv.Atoi(getEnv("JWT_EXPIRY_HOURS", "72"))
