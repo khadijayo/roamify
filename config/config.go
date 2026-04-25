@@ -56,7 +56,13 @@ func Load() {
 		JWTExpiryHours: expiry,
 		AppEnv:         getEnv("APP_ENV", "development"),
 		GrokKey:        getEnv("GROK_KEY", ""),
-		AppBaseURL:     getEnv("APP_BASE_URL", "http://localhost:8080"),
+		// In config/config.go, modify the AppBaseURL initialization:
+AppBaseURL: getEnv("APP_BASE_URL", func() string {
+    if port := getEnv("PORT", ""); port != "" {
+        return fmt.Sprintf("https://%s.onrender.com", getEnv("RENDER_SERVICE_NAME", "your-service-name"))
+    }
+    return "http://localhost:8080"
+}()),
 		SMTPHost:       getEnv("SMTP_HOST", ""),
 		SMTPPort:       getEnv("SMTP_PORT", "587"),
 		SMTPUsername:   getEnv("SMTP_USERNAME", ""),
