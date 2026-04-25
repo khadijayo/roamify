@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -87,7 +88,7 @@ func NewService(repo Repository, emailService emailsvc.Service, cfg *config.Conf
 		emailService:   emailService,
 		jwtSecret:      cfg.JWTSecret,
 		jwtExpiryHours: cfg.JWTExpiryHours,
-		appBaseURL:     strings.TrimRight(cfg.AppBaseURL, "/"),
+		appBaseURL:     sanitizeAppBaseURL(cfg.AppBaseURL),
 	}
 }
 
@@ -297,11 +298,31 @@ func (s *service) VerifyEmail(ctx context.Context, token string) (*VerifyEmailRe
 }
 
 func (s *service) sendVerification(ctx context.Context, email, fullName, rawToken string) error {
-	link := fmt.Sprintf("%s/api/v1/auth/verify-email?token=%s", s.appBaseURL, rawToken)
+	link := fmt.Sprintf("%s/api/v1/auth/verify-email?token=%s", s.appBaseURL, url.QueryEscape(rawToken))
 	if err := s.emailService.SendVerificationEmail(ctx, email, fullName, link); err != nil {
 		return fmt.Errorf("%w: %v", ErrVerificationEmailFailed, err)
 	}
 	return nil
+}
+
+func sanitizeAppBaseURL(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return strings.TrimRight(raw, "/")
+	}
+
+	// Keep only scheme + host to prevent malformed links like /swagger/#/... from env mistakes.
+	u.Path = ""
+	u.RawPath = ""
+	u.RawQuery = ""
+	u.Fragment = ""
+
+	return strings.TrimRight(u.String(), "/")
 }
 
 func (s *service) issueToken(user *users.User) (string, error) {
