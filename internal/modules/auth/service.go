@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/khadijayo/roamify/config"
 	"github.com/khadijayo/roamify/internal/modules/users"
 	emailsvc "github.com/khadijayo/roamify/internal/services/email"
@@ -63,8 +62,7 @@ type AuthResponse struct {
 }
 
 type VerifyEmailResponse struct {
-	UserID     uuid.UUID `json:"user_id"`
-	IsVerified bool      `json:"is_verified"`
+	IsVerified bool `json:"is_verified"`
 }
 
 type Service interface {
@@ -292,7 +290,6 @@ func (s *service) VerifyEmail(ctx context.Context, token string) (*VerifyEmailRe
 	}
 
 	return &VerifyEmailResponse{
-		UserID:     user.ID,
 		IsVerified: true,
 	}, nil
 }
