@@ -50,6 +50,13 @@ type service struct {
 	httpClient *http.Client
 }
 
+func resolveAIProvider(key string) (provider, endpoint, model string) {
+	if strings.HasPrefix(strings.TrimSpace(key), "gsk_") {
+		return "GROQ", "https://api.groq.com/openai/v1/chat/completions", "llama-3.3-70b-versatile"
+	}
+	return "GROK", "https://api.x.ai/v1/chat/completions", "grok-3-fast"
+}
+
 func NewService(repo Repository, grokKey string) Service {
 	return &service{
 		repo:       repo,
@@ -612,9 +619,11 @@ func (s *service) PlanAndCreateTripWithAI(userID uuid.UUID, req *PlanAndCreateTr
 
 func (s *service) generateActivities(req *GenerateAIItineraryRequest) ([]aiGeneratedActivity, error) {
 	if s.grokKey == "" {
-		fmt.Println("[generateActivities] WARNING: GROK_KEY is not set — returning mock fallback. Set GROK_KEY in your environment variables.")
+		fmt.Println("[generateActivities] WARNING: GROQ_API_KEY/GROK_KEY is not set - returning mock fallback.")
 		return fallbackActivities(req), nil
 	}
+
+	provider, endpoint, model := resolveAIProvider(s.grokKey)
 
 	prompt := fmt.Sprintf("Generate a detailed travel itinerary as JSON array only. Location: %s. Vibe: %s. People: %d. Start: %s. End: %s. Budget: %.2f. %s\nEach item must include keys: day_number,title,item_type,people_count,start_time,location_name,notes. start_time must be RFC3339.",
 		req.Location,
@@ -627,15 +636,19 @@ func (s *service) generateActivities(req *GenerateAIItineraryRequest) ([]aiGener
 	)
 
 	bodyMap := map[string]interface{}{
-		"model": "grok-3-fast",
+		"model": model,
 		"messages": []map[string]string{{
 			"role":    "user",
 			"content": prompt,
 		}},
 	}
 
-	body, _ := json.Marshal(bodyMap)
-	httpReq, err := http.NewRequest("POST", "https://api.x.ai/v1/chat/completions", bytes.NewBuffer(body))
+	body, err := json.Marshal(bodyMap)
+	if err != nil {
+		fmt.Println("[generateActivities] marshal error:", err)
+		return fallbackActivities(req), nil
+	}
+	httpReq, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -644,14 +657,14 @@ func (s *service) generateActivities(req *GenerateAIItineraryRequest) ([]aiGener
 
 	resp, err := s.httpClient.Do(httpReq)
 	if err != nil {
-		fmt.Println("[generateActivities] HTTP error:", err)
+		fmt.Printf("[generateActivities] %s HTTP error: %v\n", provider, err)
 		return fallbackActivities(req), nil
 	}
 	defer resp.Body.Close()
 
 	respBody, _ := io.ReadAll(resp.Body)
-	fmt.Println("[generateActivities] GROK STATUS:", resp.StatusCode)
-	fmt.Println("[generateActivities] GROK RAW RESPONSE:", string(respBody))
+	fmt.Printf("[generateActivities] %s STATUS: %d\n", provider, resp.StatusCode)
+	fmt.Printf("[generateActivities] %s RAW RESPONSE: %s\n", provider, string(respBody))
 
 	var grokResp struct {
 		Choices []struct {
@@ -671,7 +684,7 @@ func (s *service) generateActivities(req *GenerateAIItineraryRequest) ([]aiGener
 	}
 
 	if grokResp.Error != nil {
-		fmt.Printf("[generateActivities] xAI error (%s): %s\n", grokResp.Error.Type, grokResp.Error.Message)
+		fmt.Printf("[generateActivities] %s error (%s): %s\n", provider, grokResp.Error.Type, grokResp.Error.Message)
 		return fallbackActivities(req), nil
 	}
 

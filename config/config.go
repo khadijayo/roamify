@@ -56,7 +56,8 @@ func Load() {
 		JWTSecret:      getEnv("JWT_SECRET", "change-me-in-production"),
 		JWTExpiryHours: expiry,
 		AppEnv:         getEnv("APP_ENV", "development"),
-		GrokKey:        getEnv("GROK_KEY", ""),
+		// Prefer GROQ_API_KEY for Groq; keep GROK_KEY as backward-compatible fallback.
+		GrokKey: getEnv("GROQ_API_KEY", getEnv("GROK_KEY", "")),
 
 		// ✅ CRITICAL: always use env in production
 		AppBaseURL: getEnv("APP_BASE_URL", "http://localhost:8080"),

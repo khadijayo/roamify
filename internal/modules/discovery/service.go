@@ -48,6 +48,13 @@ type realService struct {
 	httpClient *http.Client
 }
 
+func resolveAIProvider(key string) (provider, endpoint, model string) {
+	if strings.HasPrefix(strings.TrimSpace(key), "gsk_") {
+		return "GROQ", "https://api.groq.com/openai/v1/chat/completions", "llama-3.3-70b-versatile"
+	}
+	return "GROK", "https://api.x.ai/v1/chat/completions", "grok-3-fast"
+}
+
 // Constructor (matches your main.go)
 func NewService(grokKey string) Service {
 	return &realService{
@@ -166,7 +173,7 @@ func (s *realService) GlobalSearch(query string) (*GlobalSearchResponse, error) 
 
 func (s *realService) TravelAssistant(req *AssistantRequest) (*AssistantResponse, error) {
 	if s.grokKey == "" {
-		fmt.Println("[TravelAssistant] WARNING: GROK_KEY is not set — returning mock fallback. Set GROK_KEY in your environment variables.")
+		fmt.Println("[TravelAssistant] WARNING: GROQ_API_KEY/GROK_KEY is not set - returning mock fallback.")
 		return &AssistantResponse{
 			Suggestion: "Start central, explore nearby, keep flexibility.",
 			RoutePlan:  []string{"Morning: Explore", "Afternoon: Activities", "Evening: Relax"},
@@ -188,8 +195,10 @@ func (s *realService) TravelAssistant(req *AssistantRequest) (*AssistantResponse
 
 	prompt += "\nReturn ONLY JSON: {suggestion:string, route_plan:[], next_activities:[]}"
 
+	provider, endpoint, model := resolveAIProvider(s.grokKey)
+
 	bodyMap := map[string]interface{}{
-		"model": "grok-3-fast",
+		"model": model,
 		"messages": []map[string]string{
 			{
 				"role":    "user",
@@ -198,11 +207,12 @@ func (s *realService) TravelAssistant(req *AssistantRequest) (*AssistantResponse
 		},
 	}
 
-	body, _ := json.Marshal(bodyMap)
+	body, err := json.Marshal(bodyMap)
+	if err != nil {
+		return nil, err
+	}
 
-	url := "https://api.x.ai/v1/chat/completions"
-
-	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	httpReq, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -212,17 +222,16 @@ func (s *realService) TravelAssistant(req *AssistantRequest) (*AssistantResponse
 
 	resp, err := s.httpClient.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("grok request failed: %w", err)
+		return nil, fmt.Errorf("%s request failed: %w", strings.ToLower(provider), err)
 	}
 	defer resp.Body.Close()
 
 	respBody, _ := io.ReadAll(resp.Body)
-	fmt.Println("GROK STATUS:", resp.StatusCode)
-	fmt.Println("GROK RAW RESPONSE:", string(respBody))
+	fmt.Println(provider+" STATUS:", resp.StatusCode)
+	fmt.Println(provider+" RAW RESPONSE:", string(respBody))
 
-	// Check for non-2xx HTTP status from xAI
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("grok API error (HTTP %d): %s", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("%s API error (HTTP %d): %s", strings.ToLower(provider), resp.StatusCode, string(respBody))
 	}
 
 	var grokResp struct {
@@ -238,15 +247,15 @@ func (s *realService) TravelAssistant(req *AssistantRequest) (*AssistantResponse
 	}
 
 	if err := json.Unmarshal(respBody, &grokResp); err != nil {
-		return nil, fmt.Errorf("grok parse error: %w", err)
+		return nil, fmt.Errorf("%s parse error: %w", strings.ToLower(provider), err)
 	}
 
 	if grokResp.Error != nil {
-		return nil, fmt.Errorf("grok error (%s): %s", grokResp.Error.Type, grokResp.Error.Message)
+		return nil, fmt.Errorf("%s error (%s): %s", strings.ToLower(provider), grokResp.Error.Type, grokResp.Error.Message)
 	}
 
 	if len(grokResp.Choices) == 0 {
-		return nil, fmt.Errorf("empty grok response — full body: %s", string(respBody))
+		return nil, fmt.Errorf("empty %s response - full body: %s", strings.ToLower(provider), string(respBody))
 	}
 
 	text := grokResp.Choices[0].Message.Content
