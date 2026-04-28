@@ -5,380 +5,2805 @@
     "version": "1.1.0",
     "description": "Full API docs for all currently registered routes."
   },
-  "servers": [{ "url": "https://roamify-f9v5.onrender.com" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://roamify-f9v5.onrender.com"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
-    "/health": {"get": {"summary": "Health check", "security": [], "responses": {"200": {"description": "OK"}}}},
-
-    "/api/v1/auth/register": {"post": {"summary": "Register", "security": [], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RegisterRequest"}}}}, "responses": {"201": {"description": "Created"}}}},
-    "/api/v1/auth/login": {"post": {"summary": "Login", "security": [], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LoginRequest"}}}}, "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/auth/social": {"post": {"summary": "Social auth", "security": [], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SocialAuthRequest"}}}}, "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/auth/verify-email": {"get": {"summary": "Verify email", "security": [], "parameters": [{"$ref": "#/components/parameters/token"}], "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/VerifyEmailResponse"}}}}}}},
-
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "summary": "Register",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "Login",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/social": {
+      "post": {
+        "summary": "Social auth",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialAuthRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/verify-email": {
+      "get": {
+        "summary": "Verify email",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/token"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyEmailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/forgot-password": {
+      "post": {
+        "summary": "Forgot password",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/verify-reset-code": {
+      "post": {
+        "summary": "Verify reset code",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyResetCodeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "summary": "Reset password",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/resend-verification": {
+      "post": {
+        "summary": "Resend verification email",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendVerificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/users/me": {
-      "get": {"summary": "Get my profile", "responses": {"200": {"description": "OK"}}},
-      "patch": {"summary": "Update my profile", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateProfileRequest"}}}}, "responses": {"200": {"description": "OK"}}}
+      "get": {
+        "summary": "Get my profile",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update my profile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
     "/api/v1/users/me/vibe": {
-      "get": {"summary": "Get my vibe profile", "responses": {"200": {"description": "OK"}}},
-      "put": {"summary": "Upsert my vibe profile", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateVibeProfileRequest"}}}}, "responses": {"200": {"description": "OK"}}}
+      "get": {
+        "summary": "Get my vibe profile",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "summary": "Upsert my vibe profile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVibeProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
     "/api/v1/users/me/privacy": {
-      "get": {"summary": "Get privacy settings", "responses": {"200": {"description": "OK"}}},
-      "patch": {"summary": "Update privacy settings", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdatePrivacySettingsRequest"}}}}, "responses": {"200": {"description": "OK"}}}
+      "get": {
+        "summary": "Get privacy settings",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update privacy settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePrivacySettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
-    "/api/v1/users/follow": {"post": {"summary": "Follow user", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FollowUserRequest"}}}}, "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/users/follow/{userId}": {"delete": {"summary": "Unfollow user", "parameters": [{"$ref": "#/components/parameters/userId"}], "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/users/{userId}/followers": {"get": {"summary": "List followers", "parameters": [{"$ref": "#/components/parameters/userId"}], "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/users/{userId}/following": {"get": {"summary": "List following", "parameters": [{"$ref": "#/components/parameters/userId"}], "responses": {"200": {"description": "OK"}}}},
+    "/api/v1/users/follow": {
+      "post": {
+        "summary": "Follow user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/users/follow/{userId}": {
+      "delete": {
+        "summary": "Unfollow user",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/userId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/users/{userId}/followers": {
+      "get": {
+        "summary": "List followers",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/userId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/users/{userId}/following": {
+      "get": {
+        "summary": "List following",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/userId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/users/{userId}/posts": {
       "get": {
         "summary": "List user posts",
-        "parameters": [{"$ref": "#/components/parameters/userId"}, {"$ref": "#/components/parameters/page"}, {"$ref": "#/components/parameters/pageSize"}],
-        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PaginatedPostResponse"}}}}}
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/userId"
+          },
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "$ref": "#/components/parameters/pageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedPostResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
-
     "/api/v1/notifications/settings": {
-      "get": {"summary": "Get notification settings", "responses": {"200": {"description": "OK"}}},
-      "patch": {"summary": "Update notification settings", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateNotificationSettingsRequest"}}}}, "responses": {"200": {"description": "OK"}}}
+      "get": {
+        "summary": "Get notification settings",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update notification settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
-
     "/api/v1/trips/": {
-      "post": {"summary": "Create trip", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateTripRequest"}}}}, "responses": {"201": {"description": "Created"}}},
-      "get": {"summary": "List my trips", "responses": {"200": {"description": "OK"}}}
+      "post": {
+        "summary": "Create trip",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTripRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "summary": "List my trips",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
     "/api/v1/trips/{tripId}": {
-      "get": {"summary": "Get trip", "parameters": [{"$ref": "#/components/parameters/tripId"}], "responses": {"200": {"description": "OK"}}},
-      "patch": {"summary": "Update trip", "parameters": [{"$ref": "#/components/parameters/tripId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateTripRequest"}}}}, "responses": {"200": {"description": "OK"}}},
-      "delete": {"summary": "Delete trip", "parameters": [{"$ref": "#/components/parameters/tripId"}], "responses": {"200": {"description": "OK"}}}
+      "get": {
+        "summary": "Get trip",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update trip",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTripRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete trip",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
     "/api/v1/trips/{tripId}/members": {
-      "post": {"summary": "Invite member", "parameters": [{"$ref": "#/components/parameters/tripId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/InviteMemberRequest"}}}}, "responses": {"201": {"description": "Created"}}},
-      "get": {"summary": "Get members", "parameters": [{"$ref": "#/components/parameters/tripId"}], "responses": {"200": {"description": "OK"}}}
+      "post": {
+        "summary": "Invite member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteMemberRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get members",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
-    "/api/v1/trips/{tripId}/members/status": {"patch": {"summary": "Update member status", "parameters": [{"$ref": "#/components/parameters/tripId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateMemberStatusRequest"}}}}, "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/trips/{tripId}/members/{userId}": {"delete": {"summary": "Remove member", "parameters": [{"$ref": "#/components/parameters/tripId"}, {"$ref": "#/components/parameters/userId"}], "responses": {"200": {"description": "OK"}}}},
+    "/api/v1/trips/{tripId}/members/status": {
+      "patch": {
+        "summary": "Update member status",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMemberStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{tripId}/members/{userId}": {
+      "delete": {
+        "summary": "Remove member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          },
+          {
+            "$ref": "#/components/parameters/userId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/trips/{tripId}/itinerary": {
-      "post": {"summary": "Create itinerary item", "parameters": [{"$ref": "#/components/parameters/tripId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateItineraryItemRequest"}}}}, "responses": {"201": {"description": "Created"}}},
-      "get": {"summary": "Get itinerary", "parameters": [{"$ref": "#/components/parameters/tripId"}], "responses": {"200": {"description": "OK"}}}
+      "post": {
+        "summary": "Create itinerary item",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateItineraryItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get itinerary",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
     "/api/v1/trips/{tripId}/itinerary/{itemId}": {
-      "patch": {"summary": "Update itinerary item", "parameters": [{"$ref": "#/components/parameters/tripId"}, {"$ref": "#/components/parameters/itemId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateItineraryItemRequest"}}}}, "responses": {"200": {"description": "OK"}}},
-      "delete": {"summary": "Delete itinerary item", "parameters": [{"$ref": "#/components/parameters/tripId"}, {"$ref": "#/components/parameters/itemId"}], "responses": {"200": {"description": "OK"}}}
+      "patch": {
+        "summary": "Update itinerary item",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          },
+          {
+            "$ref": "#/components/parameters/itemId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateItineraryItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete itinerary item",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          },
+          {
+            "$ref": "#/components/parameters/itemId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
     "/api/v1/trips/{tripId}/expenses": {
-      "post": {"summary": "Create expense", "parameters": [{"$ref": "#/components/parameters/tripId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateExpenseRequest"}}}}, "responses": {"201": {"description": "Created"}}},
-      "get": {"summary": "Get expenses", "parameters": [{"$ref": "#/components/parameters/tripId"}], "responses": {"200": {"description": "OK"}}}
+      "post": {
+        "summary": "Create expense",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExpenseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get expenses",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
     "/api/v1/trips/{tripId}/expenses/{expenseId}": {
-      "patch": {"summary": "Update expense", "parameters": [{"$ref": "#/components/parameters/tripId"}, {"$ref": "#/components/parameters/expenseId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateExpenseRequest"}}}}, "responses": {"200": {"description": "OK"}}},
-      "delete": {"summary": "Delete expense", "parameters": [{"$ref": "#/components/parameters/tripId"}, {"$ref": "#/components/parameters/expenseId"}], "responses": {"200": {"description": "OK"}}}
+      "patch": {
+        "summary": "Update expense",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          },
+          {
+            "$ref": "#/components/parameters/expenseId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateExpenseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete expense",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          },
+          {
+            "$ref": "#/components/parameters/expenseId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
-
     "/api/v1/posts/": {
       "post": {
         "summary": "Create post",
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {"schema": {"$ref": "#/components/schemas/CreatePostRequest"}},
-            "multipart/form-data": {"schema": {"$ref": "#/components/schemas/CreatePostMultipartRequest"}}
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePostRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePostMultipartRequest"
+              }
+            }
           }
         },
-        "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PostMutationResponse"}}}}}
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostMutationResponse"
+                }
+              }
+            }
+          }
+        }
       },
-      "get": {"summary": "Get feed", "parameters": [{"$ref": "#/components/parameters/page"}, {"$ref": "#/components/parameters/pageSize"}], "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PaginatedPostResponse"}}}}}}
+      "get": {
+        "summary": "Get feed",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "$ref": "#/components/parameters/pageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedPostResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "/api/v1/posts/{postId}": {
-      "get": {"summary": "Get post", "parameters": [{"$ref": "#/components/parameters/postId"}], "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PostMutationResponse"}}}}}},
-      "patch": {"summary": "Update post", "parameters": [{"$ref": "#/components/parameters/postId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdatePostRequest"}}}}, "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PostMutationResponse"}}}}}},
-      "delete": {"summary": "Delete post", "parameters": [{"$ref": "#/components/parameters/postId"}], "responses": {"200": {"description": "OK"}}}
+      "get": {
+        "summary": "Get post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostMutationResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePostRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostMutationResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
     "/api/v1/posts/{postId}/comments": {
       "get": {
         "summary": "Get post comments",
-        "parameters": [{"$ref": "#/components/parameters/postId"}],
-        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PostCommentsListResponse"}}}}}
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostCommentsListResponse"
+                }
+              }
+            }
+          }
+        }
       },
       "post": {
         "summary": "Add post comment",
-        "parameters": [{"$ref": "#/components/parameters/postId"}],
-        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateCommentRequest"}}}},
-        "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PostCommentMutationResponse"}}}}}
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostCommentMutationResponse"
+                }
+              }
+            }
+          }
+        }
       },
       "delete": {
         "summary": "Delete post comment",
-        "parameters": [{"$ref": "#/components/parameters/postId"}, {"$ref": "#/components/parameters/commentIdQuery"}],
-        "responses": {"200": {"description": "OK"}}
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          },
+          {
+            "$ref": "#/components/parameters/commentIdQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/v1/posts/{postId}/like": {
-      "post": {"summary": "Like post", "parameters": [{"$ref": "#/components/parameters/postId"}], "responses": {"200": {"description": "OK"}}},
-      "delete": {"summary": "Unlike post", "parameters": [{"$ref": "#/components/parameters/postId"}], "responses": {"200": {"description": "OK"}}}
+      "post": {
+        "summary": "Like post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unlike post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
-
     "/api/v1/reports/": {
       "post": {
         "summary": "Create report",
-        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateReportRequest"}}}},
-        "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ReportMutationResponse"}}}}}
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportMutationResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
-
     "/api/v1/admin/users": {
       "get": {
-        "summary": "List users for moderation",
-        "parameters": [{"$ref": "#/components/parameters/page"}, {"$ref": "#/components/parameters/limit"}, {"$ref": "#/components/parameters/q"}],
-        "responses": {"200": {"description": "OK"}}
+        "summary": "List users",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/q"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "banned"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}": {
+      "get": {
+        "summary": "Get user details",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete user",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}/role": {
+      "patch": {
+        "summary": "Update user role",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRoleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}/activity": {
+      "get": {
+        "summary": "Get user activity",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/v1/admin/users/{id}/ban": {
       "put": {
         "summary": "Ban user",
-        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
-        "responses": {"200": {"description": "OK"}}
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/v1/admin/users/{id}/unban": {
       "put": {
         "summary": "Unban user",
-        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
-        "responses": {"200": {"description": "OK"}}
-      }
-    },
-    "/api/v1/admin/users/{id}": {
-      "delete": {
-        "summary": "Soft delete user",
-        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
-        "responses": {"200": {"description": "OK"}}
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/v1/admin/posts": {
       "get": {
-        "summary": "List posts for moderation",
-        "parameters": [{"$ref": "#/components/parameters/page"}, {"$ref": "#/components/parameters/limit"}, {"$ref": "#/components/parameters/q"}],
-        "responses": {"200": {"description": "OK"}}
+        "summary": "List posts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/v1/admin/posts/{id}": {
+      "get": {
+        "summary": "Get post details",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
       "delete": {
-        "summary": "Soft delete post",
-        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
-        "responses": {"200": {"description": "OK"}}
+        "summary": "Delete post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/v1/admin/posts/{id}/hide": {
       "put": {
         "summary": "Hide post",
-        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
-        "responses": {"200": {"description": "OK"}}
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/v1/admin/posts/{id}/unhide": {
       "put": {
         "summary": "Unhide post",
-        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
-        "responses": {"200": {"description": "OK"}}
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/comments": {
+      "get": {
+        "summary": "List comments",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/comments/{id}": {
+      "delete": {
+        "summary": "Delete comment",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/trips": {
+      "get": {
+        "summary": "List trips",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/trips/{id}": {
+      "delete": {
+        "summary": "Delete trip",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/v1/admin/reports": {
       "get": {
-        "summary": "List reports for moderation",
-        "parameters": [{"$ref": "#/components/parameters/page"}, {"$ref": "#/components/parameters/limit"}, {"$ref": "#/components/parameters/status"}],
-        "responses": {"200": {"description": "OK"}}
+        "summary": "List reports",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/status"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/v1/admin/reports/{id}/resolve": {
       "put": {
         "summary": "Resolve report",
-        "parameters": [{"$ref": "#/components/parameters/adminResourceId"}],
-        "responses": {"200": {"description": "OK"}}
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
-
+    "/api/v1/admin/stats": {
+      "get": {
+        "summary": "Get dashboard stats",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/wishlist/items": {
-      "post": {"summary": "Create wishlist item", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateItemRequest"}}}}, "responses": {"201": {"description": "Created"}}},
-      "get": {"summary": "List wishlist items", "responses": {"200": {"description": "OK"}}}
-    },
-    "/api/v1/wishlist/items/{itemId}": {
-      "patch": {"summary": "Update wishlist item", "parameters": [{"$ref": "#/components/parameters/itemId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateItemRequest"}}}}, "responses": {"200": {"description": "OK"}}},
-      "delete": {"summary": "Delete wishlist item", "parameters": [{"$ref": "#/components/parameters/itemId"}], "responses": {"200": {"description": "OK"}}}
-    },
-    "/api/v1/wishlist/collections": {
-      "post": {"summary": "Create collection", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateCollectionRequest"}}}}, "responses": {"201": {"description": "Created"}}},
-      "get": {"summary": "List collections", "responses": {"200": {"description": "OK"}}}
-    },
-    "/api/v1/wishlist/collections/{collectionId}": {
-      "get": {"summary": "Get collection", "parameters": [{"$ref": "#/components/parameters/collectionId"}], "responses": {"200": {"description": "OK"}}},
-      "patch": {"summary": "Update collection", "parameters": [{"$ref": "#/components/parameters/collectionId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateCollectionRequest"}}}}, "responses": {"200": {"description": "OK"}}},
-      "delete": {"summary": "Delete collection", "parameters": [{"$ref": "#/components/parameters/collectionId"}], "responses": {"200": {"description": "OK"}}}
-    },
-    "/api/v1/wishlist/collections/{collectionId}/items": {
-      "post": {"summary": "Add item to collection", "parameters": [{"$ref": "#/components/parameters/collectionId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AddToCollectionRequest"}}}}, "responses": {"200": {"description": "OK"}}}
-    },
-    "/api/v1/wishlist/collections/{collectionId}/items/{itemId}": {
-      "delete": {"summary": "Remove item from collection", "parameters": [{"$ref": "#/components/parameters/collectionId"}, {"$ref": "#/components/parameters/itemId"}], "responses": {"200": {"description": "OK"}}}
-    },
-
-    "/api/v1/challenges/": {
-      "get": {"summary": "List challenges", "responses": {"200": {"description": "OK"}}},
-      "post": {"summary": "Create challenge", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateChallengeRequest"}}}}, "responses": {"201": {"description": "Created"}}}
-    },
-    "/api/v1/challenges/leaderboard": {"get": {"summary": "Get leaderboard", "parameters": [{"$ref": "#/components/parameters/limit"}], "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/challenges/accept": {"post": {"summary": "Accept challenge", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AcceptChallengeRequest"}}}}, "responses": {"201": {"description": "Created"}}}},
-    "/api/v1/challenges/complete": {"post": {"summary": "Complete challenge", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CompleteChallengeRequest"}}}}, "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/challenges/my-progress": {"get": {"summary": "Get my challenge progress", "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/challenges/trivia": {
-      "get": {"summary": "List trivia questions", "parameters": [{"$ref": "#/components/parameters/limit"}], "responses": {"200": {"description": "OK"}}},
-      "post": {"summary": "Create trivia question", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateTriviaQuestionRequest"}}}}, "responses": {"201": {"description": "Created"}}}
-    },
-    "/api/v1/challenges/trivia/answer": {"post": {"summary": "Answer trivia question", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AnswerTriviaRequest"}}}}, "responses": {"200": {"description": "OK"}}}},
-
-    "/api/v1/passport/vault": {
-      "put": {"summary": "Upsert passport vault", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpsertVaultRequest"}}}}, "responses": {"200": {"description": "OK"}}},
-      "get": {"summary": "Get passport vault", "responses": {"200": {"description": "OK"}}},
-      "delete": {"summary": "Delete passport vault", "responses": {"200": {"description": "OK"}}}
-    },
-    "/api/v1/passport/stamps": {
-      "post": {"summary": "Add passport stamp", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AddStampRequest"}}}}, "responses": {"201": {"description": "Created"}}},
-      "get": {"summary": "Get passport stamps", "responses": {"200": {"description": "OK"}}}
-    },
-    "/api/v1/passport/stamps/{stampId}": {"delete": {"summary": "Delete passport stamp", "parameters": [{"$ref": "#/components/parameters/stampId"}], "responses": {"200": {"description": "OK"}}}},
-
-    "/api/v1/discovery/home": {"get": {"summary": "Discovery home", "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/discovery/vibe-search": {"get": {"summary": "Discovery vibe search", "parameters": [{"$ref": "#/components/parameters/q"}], "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/discovery/atlas": {"get": {"summary": "Discovery atlas list", "parameters": [{"$ref": "#/components/parameters/aesthetic"}, {"$ref": "#/components/parameters/sortBy"}, {"$ref": "#/components/parameters/hiddenGemsOnly"}, {"$ref": "#/components/parameters/category"}], "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/discovery/atlas/{locationId}": {"get": {"summary": "Discovery atlas detail", "parameters": [{"$ref": "#/components/parameters/locationId"}], "responses": {"200": {"description": "OK"}}}},
-
-    "/api/v1/home": {"get": {"summary": "Alias for discovery home", "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/vibe-search": {"get": {"summary": "Alias for discovery vibe search", "parameters": [{"$ref": "#/components/parameters/q"}], "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/atlas": {"get": {"summary": "Alias for discovery atlas list", "parameters": [{"$ref": "#/components/parameters/aesthetic"}, {"$ref": "#/components/parameters/sortBy"}, {"$ref": "#/components/parameters/hiddenGemsOnly"}, {"$ref": "#/components/parameters/category"}], "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/atlas/{locationId}": {"get": {"summary": "Alias for discovery atlas detail", "parameters": [{"$ref": "#/components/parameters/locationId"}], "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/search/global": {"get": {"summary": "Global search", "parameters": [{"$ref": "#/components/parameters/q"}], "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/search/results": {"get": {"summary": "Alias for global search", "parameters": [{"$ref": "#/components/parameters/q"}], "responses": {"200": {"description": "OK"}}}},
-    "/api/v1/assistant/travel": {"post": {"summary": "Travel assistant", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AssistantRequest"}}}}, "responses": {"200": {"description": "OK"}}}}
-  },
-
-  "components": {
-    "securitySchemes": {
-      "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
-    },
-    "parameters": {
-      "userId": {"name": "userId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
-      "tripId": {"name": "tripId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
-      "itemId": {"name": "itemId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
-      "expenseId": {"name": "expenseId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
-      "postId": {"name": "postId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
-      "adminResourceId": {"name": "id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
-      "collectionId": {"name": "collectionId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
-      "stampId": {"name": "stampId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
-      "locationId": {"name": "locationId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
-      "commentIdQuery": {"name": "comment_id", "in": "query", "required": true, "schema": {"type": "string", "format": "uuid"}},
-      "token": {"name": "token", "in": "query", "required": true, "schema": {"type": "string"}},
-      "page": {"name": "page", "in": "query", "schema": {"type": "integer", "default": 1}},
-      "pageSize": {"name": "page_size", "in": "query", "schema": {"type": "integer", "default": 20}},
-      "limit": {"name": "limit", "in": "query", "schema": {"type": "integer", "default": 20}},
-      "q": {"name": "q", "in": "query", "schema": {"type": "string"}},
-      "status": {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["pending", "resolved"]}},
-      "aesthetic": {"name": "aesthetic", "in": "query", "schema": {"type": "string"}},
-      "sortBy": {"name": "sort_by", "in": "query", "schema": {"type": "string"}},
-      "hiddenGemsOnly": {"name": "hidden_gems_only", "in": "query", "schema": {"type": "boolean"}},
-      "category": {"name": "category", "in": "query", "schema": {"type": "string"}}
-    },
-    "schemas": {
-      "RegisterRequest": {"type": "object", "required": ["full_name", "email", "password"], "properties": {"full_name": {"type": "string"}, "email": {"type": "string", "format": "email"}, "password": {"type": "string", "minLength": 8}}},
-      "LoginRequest": {"type": "object", "required": ["email", "password"], "properties": {"email": {"type": "string", "format": "email"}, "password": {"type": "string"}}},
-      "SocialAuthRequest": {"type": "object", "required": ["provider", "provider_user_id", "full_name"], "properties": {"provider": {"type": "string", "enum": ["google", "tiktok", "apple"]}, "provider_user_id": {"type": "string"}, "email": {"type": "string", "format": "email"}, "full_name": {"type": "string"}, "avatar_url": {"type": "string"}}},
-      "VerifyEmailResponse": {"type": "object", "properties": {"success": {"type": "boolean"}, "data": {"type": "object", "properties": {"user_id": {"type": "string", "format": "uuid"}, "is_verified": {"type": "boolean"}}}}},
-      "UpdateProfileRequest": {"type": "object", "properties": {"full_name": {"type": "string"}, "avatar_url": {"type": "string"}}},
-      "UpdateVibeProfileRequest": {"type": "object", "properties": {"explorer_type": {"type": "string"}, "preferred_vibes": {"type": "array", "items": {"type": "string"}}, "travel_pace": {"type": "string"}, "budget_style": {"type": "string"}, "travel_with": {"type": "string"}, "interests": {"type": "array", "items": {"type": "string"}}, "onboarding_complete": {"type": "boolean"}}},
-      "FollowUserRequest": {"type": "object", "required": ["user_id"], "properties": {"user_id": {"type": "string", "format": "uuid"}}},
-      "UpdatePrivacySettingsRequest": {"type": "object", "properties": {"ghost_mode_enabled": {"type": "boolean"}, "data_sharing_enabled": {"type": "boolean"}, "map_visibility": {"type": "string"}}},
-      "UpdateNotificationSettingsRequest": {"type": "object", "properties": {"trip_reminders_enabled": {"type": "boolean"}, "squad_updates_enabled": {"type": "boolean"}, "price_drop_alerts_enabled": {"type": "boolean"}}},
-      "CreateTripRequest": {"type": "object", "required": ["title", "destination"], "properties": {"title": {"type": "string"}, "destination": {"type": "string"}, "trip_type": {"type": "string"}, "vibe_tags": {"type": "array", "items": {"type": "string"}}, "travelers_planned": {"type": "integer"}, "start_date": {"type": "string", "format": "date-time"}, "end_date": {"type": "string", "format": "date-time"}, "budget": {"type": "number"}, "cover_image_url": {"type": "string"}, "notes": {"type": "string"}}},
-      "UpdateTripRequest": {"type": "object", "properties": {"title": {"type": "string"}, "destination": {"type": "string"}, "trip_type": {"type": "string"}, "vibe_tags": {"type": "array", "items": {"type": "string"}}, "travelers_planned": {"type": "integer"}, "start_date": {"type": "string", "format": "date-time"}, "end_date": {"type": "string", "format": "date-time"}, "budget": {"type": "number"}, "cover_image_url": {"type": "string"}, "notes": {"type": "string"}, "status": {"type": "string"}}},
-      "InviteMemberRequest": {"type": "object", "required": ["user_id"], "properties": {"user_id": {"type": "string", "format": "uuid"}, "role": {"type": "string"}}},
-      "UpdateMemberStatusRequest": {"type": "object", "required": ["join_status"], "properties": {"join_status": {"type": "string"}}},
-      "CreateItineraryItemRequest": {"type": "object", "required": ["day_number", "title"], "properties": {"day_number": {"type": "integer"}, "title": {"type": "string"}, "item_type": {"type": "string"}, "start_time": {"type": "string", "format": "date-time"}, "location_name": {"type": "string"}, "notes": {"type": "string"}, "lat": {"type": "number"}, "lng": {"type": "number"}, "sort_order": {"type": "integer"}}},
-      "UpdateItineraryItemRequest": {"type": "object", "properties": {"day_number": {"type": "integer"}, "title": {"type": "string"}, "item_type": {"type": "string"}, "start_time": {"type": "string", "format": "date-time"}, "location_name": {"type": "string"}, "notes": {"type": "string"}, "lat": {"type": "number"}, "lng": {"type": "number"}, "sort_order": {"type": "integer"}}},
-      "CreateExpenseRequest": {"type": "object", "required": ["description", "amount", "expense_date"], "properties": {"description": {"type": "string"}, "category": {"type": "string"}, "amount": {"type": "number"}, "expense_date": {"type": "string", "format": "date-time"}, "currency_code": {"type": "string"}}},
-      "UpdateExpenseRequest": {"type": "object", "properties": {"description": {"type": "string"}, "category": {"type": "string"}, "amount": {"type": "number"}, "expense_date": {"type": "string", "format": "date-time"}, "currency_code": {"type": "string"}}},
-      "CreatePostRequest": {"type": "object", "required": ["content"], "properties": {"content": {"type": "string"}, "location": {"type": "string"}, "image_url": {"type": "string"}, "tags": {"type": "array", "items": {"type": "string"}}, "visibility": {"type": "string", "enum": ["public", "followers", "private"]}}},
-      "CreatePostMultipartRequest": {
-        "type": "object",
-        "required": ["content"],
-        "properties": {
-          "content": {"type": "string"},
-          "location": {"type": "string"},
-          "image_url": {"type": "string"},
-          "tags": {"type": "array", "items": {"type": "string"}},
-          "visibility": {"type": "string", "enum": ["public", "followers", "private"]},
-          "image": {"type": "string", "format": "binary"},
-          "image_file": {"type": "string", "format": "binary"},
-          "file": {"type": "string", "format": "binary"},
-          "post_image": {"type": "string", "format": "binary"}
+      "post": {
+        "summary": "Create wishlist item",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
         }
       },
-      "UpdatePostRequest": {"type": "object", "properties": {"content": {"type": "string"}, "location": {"type": "string"}, "image_url": {"type": "string"}, "visibility": {"type": "string"}}},
-      "CreateCommentRequest": {"type": "object", "required": ["content"], "properties": {"content": {"type": "string"}}},
+      "get": {
+        "summary": "List wishlist items",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/wishlist/items/{itemId}": {
+      "patch": {
+        "summary": "Update wishlist item",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/itemId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete wishlist item",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/itemId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/wishlist/collections": {
+      "post": {
+        "summary": "Create collection",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCollectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "summary": "List collections",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/wishlist/collections/{collectionId}": {
+      "get": {
+        "summary": "Get collection",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update collection",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete collection",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/wishlist/collections/{collectionId}/items": {
+      "post": {
+        "summary": "Add item to collection",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddToCollectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/wishlist/collections/{collectionId}/items/{itemId}": {
+      "delete": {
+        "summary": "Remove item from collection",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
+          },
+          {
+            "$ref": "#/components/parameters/itemId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/": {
+      "get": {
+        "summary": "List challenges",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create challenge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChallengeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/leaderboard": {
+      "get": {
+        "summary": "Get leaderboard",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/accept": {
+      "post": {
+        "summary": "Accept challenge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptChallengeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/complete": {
+      "post": {
+        "summary": "Complete challenge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteChallengeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/my-progress": {
+      "get": {
+        "summary": "Get my challenge progress",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/trivia": {
+      "get": {
+        "summary": "List trivia questions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create trivia question",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTriviaQuestionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/trivia/answer": {
+      "post": {
+        "summary": "Answer trivia question",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerTriviaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/passport/vault": {
+      "put": {
+        "summary": "Upsert passport vault",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertVaultRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get passport vault",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete passport vault",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/passport/stamps": {
+      "post": {
+        "summary": "Add passport stamp",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddStampRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get passport stamps",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/passport/stamps/{stampId}": {
+      "delete": {
+        "summary": "Delete passport stamp",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/stampId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/home": {
+      "get": {
+        "summary": "Discovery home",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/vibe-search": {
+      "get": {
+        "summary": "Discovery vibe search",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/atlas": {
+      "get": {
+        "summary": "Discovery atlas list",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/aesthetic"
+          },
+          {
+            "$ref": "#/components/parameters/sortBy"
+          },
+          {
+            "$ref": "#/components/parameters/hiddenGemsOnly"
+          },
+          {
+            "$ref": "#/components/parameters/category"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/atlas/{locationId}": {
+      "get": {
+        "summary": "Discovery atlas detail",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/locationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/home": {
+      "get": {
+        "summary": "Alias for discovery home",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/vibe-search": {
+      "get": {
+        "summary": "Alias for discovery vibe search",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/atlas": {
+      "get": {
+        "summary": "Alias for discovery atlas list",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/aesthetic"
+          },
+          {
+            "$ref": "#/components/parameters/sortBy"
+          },
+          {
+            "$ref": "#/components/parameters/hiddenGemsOnly"
+          },
+          {
+            "$ref": "#/components/parameters/category"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/atlas/{locationId}": {
+      "get": {
+        "summary": "Alias for discovery atlas detail",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/locationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/search/global": {
+      "get": {
+        "summary": "Global search",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/search/results": {
+      "get": {
+        "summary": "Alias for global search",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/travel": {
+      "post": {
+        "summary": "Travel assistant",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "parameters": {
+      "userId": {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "tripId": {
+        "name": "tripId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "itemId": {
+        "name": "itemId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "expenseId": {
+        "name": "expenseId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "postId": {
+        "name": "postId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "adminResourceId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "collectionId": {
+        "name": "collectionId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "stampId": {
+        "name": "stampId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "locationId": {
+        "name": "locationId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "commentIdQuery": {
+        "name": "comment_id",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "token": {
+        "name": "token",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "page": {
+        "name": "page",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "default": 1
+        }
+      },
+      "pageSize": {
+        "name": "page_size",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "default": 20
+        }
+      },
+      "limit": {
+        "name": "limit",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "default": 20
+        }
+      },
+      "q": {
+        "name": "q",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "status": {
+        "name": "status",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "resolved"
+          ]
+        }
+      },
+      "aesthetic": {
+        "name": "aesthetic",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "sortBy": {
+        "name": "sort_by",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "hiddenGemsOnly": {
+        "name": "hidden_gems_only",
+        "in": "query",
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "category": {
+        "name": "category",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "schemas": {
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "full_name",
+          "email",
+          "password"
+        ],
+        "properties": {
+          "full_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "SocialAuthRequest": {
+        "type": "object",
+        "required": [
+          "provider",
+          "provider_user_id",
+          "full_name"
+        ],
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "google",
+              "tiktok",
+              "apple"
+            ]
+          },
+          "provider_user_id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "avatar_url": {
+            "type": "string"
+          }
+        }
+      },
+      "VerifyEmailResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "user_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "is_verified": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "ForgotPasswordRequest": {
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        }
+      },
+      "VerifyResetCodeRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "code"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "code",
+          "new_password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "code": {
+            "type": "string"
+          },
+          "new_password": {
+            "type": "string",
+            "minLength": 8
+          }
+        }
+      },
+      "ResendVerificationRequest": {
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        }
+      },
+      "UpdateUserRoleRequest": {
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin",
+              "moderator"
+            ]
+          }
+        }
+      },
+      "UpdateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "full_name": {
+            "type": "string"
+          },
+          "avatar_url": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateVibeProfileRequest": {
+        "type": "object",
+        "properties": {
+          "explorer_type": {
+            "type": "string"
+          },
+          "preferred_vibes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "travel_pace": {
+            "type": "string"
+          },
+          "budget_style": {
+            "type": "string"
+          },
+          "travel_with": {
+            "type": "string"
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "onboarding_complete": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FollowUserRequest": {
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "UpdatePrivacySettingsRequest": {
+        "type": "object",
+        "properties": {
+          "ghost_mode_enabled": {
+            "type": "boolean"
+          },
+          "data_sharing_enabled": {
+            "type": "boolean"
+          },
+          "map_visibility": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateNotificationSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "trip_reminders_enabled": {
+            "type": "boolean"
+          },
+          "squad_updates_enabled": {
+            "type": "boolean"
+          },
+          "price_drop_alerts_enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateTripRequest": {
+        "type": "object",
+        "required": [
+          "title",
+          "destination"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "trip_type": {
+            "type": "string"
+          },
+          "vibe_tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "travelers_planned": {
+            "type": "integer"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "budget": {
+            "type": "number"
+          },
+          "cover_image_url": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateTripRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "trip_type": {
+            "type": "string"
+          },
+          "vibe_tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "travelers_planned": {
+            "type": "integer"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "budget": {
+            "type": "number"
+          },
+          "cover_image_url": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "InviteMemberRequest": {
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateMemberStatusRequest": {
+        "type": "object",
+        "required": [
+          "join_status"
+        ],
+        "properties": {
+          "join_status": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateItineraryItemRequest": {
+        "type": "object",
+        "required": [
+          "day_number",
+          "title"
+        ],
+        "properties": {
+          "day_number": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "item_type": {
+            "type": "string"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "location_name": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "sort_order": {
+            "type": "integer"
+          }
+        }
+      },
+      "UpdateItineraryItemRequest": {
+        "type": "object",
+        "properties": {
+          "day_number": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "item_type": {
+            "type": "string"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "location_name": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "sort_order": {
+            "type": "integer"
+          }
+        }
+      },
+      "CreateExpenseRequest": {
+        "type": "object",
+        "required": [
+          "description",
+          "amount",
+          "expense_date"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "expense_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currency_code": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateExpenseRequest": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "expense_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currency_code": {
+            "type": "string"
+          }
+        }
+      },
+      "CreatePostRequest": {
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "followers",
+              "private"
+            ]
+          }
+        }
+      },
+      "CreatePostMultipartRequest": {
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "followers",
+              "private"
+            ]
+          },
+          "image": {
+            "type": "string",
+            "format": "binary"
+          },
+          "image_file": {
+            "type": "string",
+            "format": "binary"
+          },
+          "file": {
+            "type": "string",
+            "format": "binary"
+          },
+          "post_image": {
+            "type": "string",
+            "format": "binary"
+          }
+        }
+      },
+      "UpdatePostRequest": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateCommentRequest": {
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        }
+      },
       "PostTag": {
         "type": "object",
         "properties": {
-          "id": {"type": "string", "format": "uuid"},
-          "post_id": {"type": "string", "format": "uuid"},
-          "tag": {"type": "string"},
-          "created_at": {"type": "string", "format": "date-time"}
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "post_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tag": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "PostCommentResponse": {
         "type": "object",
         "properties": {
-          "id": {"type": "string", "format": "uuid"},
-          "post_id": {"type": "string", "format": "uuid"},
-          "user_id": {"type": "string", "format": "uuid"},
-          "author_name": {"type": "string"},
-          "full_name": {"type": "string"},
-          "author_avatar_url": {"type": "string", "nullable": true},
-          "content": {"type": "string"},
-          "created_at": {"type": "string", "format": "date-time"},
-          "updated_at": {"type": "string", "format": "date-time"}
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "post_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "author_name": {
+            "type": "string"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "author_avatar_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "content": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "PostResponse": {
         "type": "object",
         "properties": {
-          "id": {"type": "string", "format": "uuid"},
-          "author_user_id": {"type": "string", "format": "uuid"},
-          "author_name": {"type": "string"},
-          "full_name": {"type": "string"},
-          "author_avatar_url": {"type": "string", "nullable": true},
-          "content": {"type": "string"},
-          "location": {"type": "string"},
-          "image_url": {"type": "string", "nullable": true},
-          "likes_count": {"type": "integer"},
-          "comments_count": {"type": "integer"},
-          "is_liked": {"type": "boolean"},
-          "visibility": {"type": "string"},
-          "created_at": {"type": "string", "format": "date-time"},
-          "updated_at": {"type": "string", "format": "date-time"},
-          "tags": {"type": "array", "items": {"$ref": "#/components/schemas/PostTag"}},
-          "comments": {"type": "array", "items": {"$ref": "#/components/schemas/PostCommentResponse"}}
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "author_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "author_name": {
+            "type": "string"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "author_avatar_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "content": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "likes_count": {
+            "type": "integer"
+          },
+          "comments_count": {
+            "type": "integer"
+          },
+          "is_liked": {
+            "type": "boolean"
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostTag"
+            }
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostCommentResponse"
+            }
+          }
         }
       },
       "PaginatedPostResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean"},
-          "message": {"type": "string"},
-          "data": {"type": "array", "items": {"$ref": "#/components/schemas/PostResponse"}},
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostResponse"
+            }
+          },
           "meta": {
             "type": "object",
             "properties": {
-              "page": {"type": "integer"},
-              "page_size": {"type": "integer"},
-              "total_items": {"type": "integer"},
-              "total_pages": {"type": "integer"}
+              "page": {
+                "type": "integer"
+              },
+              "page_size": {
+                "type": "integer"
+              },
+              "total_items": {
+                "type": "integer"
+              },
+              "total_pages": {
+                "type": "integer"
+              }
             }
           }
         }
@@ -386,43 +2811,373 @@
       "PostMutationResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean"},
-          "message": {"type": "string"},
-          "data": {"$ref": "#/components/schemas/PostResponse"}
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PostResponse"
+          }
         }
       },
       "PostCommentsListResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean"},
-          "message": {"type": "string"},
-          "data": {"type": "array", "items": {"$ref": "#/components/schemas/PostCommentResponse"}}
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostCommentResponse"
+            }
+          }
         }
       },
       "PostCommentMutationResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean"},
-          "message": {"type": "string"},
-          "data": {"$ref": "#/components/schemas/PostCommentResponse"}
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PostCommentResponse"
+          }
         }
       },
-      "CreateReportRequest": {"type": "object", "required": ["target_type", "target_id", "reason"], "properties": {"target_type": {"type": "string", "enum": ["user", "post"]}, "target_id": {"type": "string", "format": "uuid"}, "reason": {"type": "string"}}},
-      "Report": {"type": "object", "properties": {"id": {"type": "string", "format": "uuid"}, "reporter_id": {"type": "string", "format": "uuid"}, "target_type": {"type": "string", "enum": ["user", "post"]}, "target_id": {"type": "string", "format": "uuid"}, "reason": {"type": "string"}, "status": {"type": "string", "enum": ["pending", "resolved"]}, "created_at": {"type": "string", "format": "date-time"}}},
-      "ReportMutationResponse": {"type": "object", "properties": {"success": {"type": "boolean"}, "data": {"$ref": "#/components/schemas/Report"}}},
-      "CreateItemRequest": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}, "location": {"type": "string"}, "category": {"type": "string"}, "notes": {"type": "string"}, "estimated_cost": {"type": "number"}}},
-      "UpdateItemRequest": {"type": "object", "properties": {"name": {"type": "string"}, "location": {"type": "string"}, "category": {"type": "string"}, "notes": {"type": "string"}, "estimated_cost": {"type": "number"}}},
-      "CreateCollectionRequest": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}, "description": {"type": "string"}, "emoji": {"type": "string"}, "color_token": {"type": "string"}}},
-      "UpdateCollectionRequest": {"type": "object", "properties": {"name": {"type": "string"}, "description": {"type": "string"}, "emoji": {"type": "string"}, "color_token": {"type": "string"}}},
-      "AddToCollectionRequest": {"type": "object", "required": ["wishlist_item_id"], "properties": {"wishlist_item_id": {"type": "string", "format": "uuid"}}},
-      "CreateChallengeRequest": {"type": "object", "required": ["title"], "properties": {"title": {"type": "string"}, "description": {"type": "string"}, "category": {"type": "string"}, "difficulty": {"type": "string"}, "points": {"type": "integer"}}},
-      "AcceptChallengeRequest": {"type": "object", "required": ["challenge_id"], "properties": {"challenge_id": {"type": "string", "format": "uuid"}}},
-      "CompleteChallengeRequest": {"type": "object", "required": ["challenge_id"], "properties": {"challenge_id": {"type": "string", "format": "uuid"}}},
-      "CreateTriviaQuestionRequest": {"type": "object", "required": ["question", "choices", "correct_answer"], "properties": {"question": {"type": "string"}, "choices": {"type": "array", "items": {"type": "string"}}, "correct_answer": {"type": "string"}, "points": {"type": "integer"}}},
-      "AnswerTriviaRequest": {"type": "object", "required": ["question_id", "answer"], "properties": {"question_id": {"type": "string", "format": "uuid"}, "answer": {"type": "string"}}},
-      "UpsertVaultRequest": {"type": "object", "required": ["encrypted_payload"], "properties": {"encrypted_payload": {"type": "string"}, "passport_image_url": {"type": "string"}, "extracted_full_name_masked": {"type": "string"}, "extracted_nationality": {"type": "string"}, "extracted_passport_number_masked": {"type": "string"}, "extracted_date_of_birth": {"type": "string"}, "extracted_expiry_date": {"type": "string"}, "extracted_country_code": {"type": "string"}}},
-      "AddStampRequest": {"type": "object", "required": ["country", "country_code", "date_visited"], "properties": {"country": {"type": "string"}, "country_code": {"type": "string"}, "date_visited": {"type": "string", "format": "date-time"}}},
-      "AssistantRequest": {"type": "object", "required": ["prompt"], "properties": {"prompt": {"type": "string"}, "waypoints": {"type": "array", "items": {"type": "string"}}, "destination": {"type": "string"}}}
+      "CreateReportRequest": {
+        "type": "object",
+        "required": [
+          "target_type",
+          "target_id",
+          "reason"
+        ],
+        "properties": {
+          "target_type": {
+            "type": "string",
+            "enum": [
+              "user",
+              "post"
+            ]
+          },
+          "target_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "Report": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reporter_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "target_type": {
+            "type": "string",
+            "enum": [
+              "user",
+              "post"
+            ]
+          },
+          "target_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "resolved"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReportMutationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Report"
+          }
+        }
+      },
+      "CreateItemRequest": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "estimated_cost": {
+            "type": "number"
+          }
+        }
+      },
+      "UpdateItemRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "estimated_cost": {
+            "type": "number"
+          }
+        }
+      },
+      "CreateCollectionRequest": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "emoji": {
+            "type": "string"
+          },
+          "color_token": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateCollectionRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "emoji": {
+            "type": "string"
+          },
+          "color_token": {
+            "type": "string"
+          }
+        }
+      },
+      "AddToCollectionRequest": {
+        "type": "object",
+        "required": [
+          "wishlist_item_id"
+        ],
+        "properties": {
+          "wishlist_item_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "CreateChallengeRequest": {
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "difficulty": {
+            "type": "string"
+          },
+          "points": {
+            "type": "integer"
+          }
+        }
+      },
+      "AcceptChallengeRequest": {
+        "type": "object",
+        "required": [
+          "challenge_id"
+        ],
+        "properties": {
+          "challenge_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "CompleteChallengeRequest": {
+        "type": "object",
+        "required": [
+          "challenge_id"
+        ],
+        "properties": {
+          "challenge_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "CreateTriviaQuestionRequest": {
+        "type": "object",
+        "required": [
+          "question",
+          "choices",
+          "correct_answer"
+        ],
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "correct_answer": {
+            "type": "string"
+          },
+          "points": {
+            "type": "integer"
+          }
+        }
+      },
+      "AnswerTriviaRequest": {
+        "type": "object",
+        "required": [
+          "question_id",
+          "answer"
+        ],
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "answer": {
+            "type": "string"
+          }
+        }
+      },
+      "UpsertVaultRequest": {
+        "type": "object",
+        "required": [
+          "encrypted_payload"
+        ],
+        "properties": {
+          "encrypted_payload": {
+            "type": "string"
+          },
+          "passport_image_url": {
+            "type": "string"
+          },
+          "extracted_full_name_masked": {
+            "type": "string"
+          },
+          "extracted_nationality": {
+            "type": "string"
+          },
+          "extracted_passport_number_masked": {
+            "type": "string"
+          },
+          "extracted_date_of_birth": {
+            "type": "string"
+          },
+          "extracted_expiry_date": {
+            "type": "string"
+          },
+          "extracted_country_code": {
+            "type": "string"
+          }
+        }
+      },
+      "AddStampRequest": {
+        "type": "object",
+        "required": [
+          "country",
+          "country_code",
+          "date_visited"
+        ],
+        "properties": {
+          "country": {
+            "type": "string"
+          },
+          "country_code": {
+            "type": "string"
+          },
+          "date_visited": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AssistantRequest": {
+        "type": "object",
+        "required": [
+          "prompt"
+        ],
+        "properties": {
+          "prompt": {
+            "type": "string"
+          },
+          "waypoints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "destination": {
+            "type": "string"
+          }
+        }
+      }
     }
   }
 }
