@@ -21,6 +21,7 @@ func AutoMigrate() {
 		// Users & identity
 		&users.User{},
 		&users.VibeProfile{},
+		&users.PasswordResetCode{},
 		&users.UserFollow{},
 		&users.UserPrivacySetting{},
 

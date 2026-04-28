@@ -19,6 +19,7 @@ type Message struct {
 type Service interface {
 	Send(ctx context.Context, msg Message) error
 	SendVerificationEmail(ctx context.Context, to, fullName, verificationURL string) error
+	SendPasswordResetCode(ctx context.Context, to, fullName, code string) error
 }
 
 type service struct {
@@ -74,6 +75,25 @@ func (s *service) SendVerificationEmail(ctx context.Context, to, fullName, verif
 	return s.Send(ctx, Message{
 		To:       []string{to},
 		Subject:  "Verify your Roamify account",
+		TextBody: body,
+	})
+}
+
+func (s *service) SendPasswordResetCode(ctx context.Context, to, fullName, code string) error {
+	name := strings.TrimSpace(fullName)
+	if name == "" {
+		name = "traveler"
+	}
+
+	body := fmt.Sprintf(
+		"Hi %s,\n\nUse the code below to reset your Roamify password:\n\n%s\n\nThis code expires in 10 minutes and can only be used once. If you did not request a password reset, please ignore this email.\n",
+		name,
+		code,
+	)
+
+	return s.Send(ctx, Message{
+		To:       []string{to},
+		Subject:  "Reset your Roamify password",
 		TextBody: body,
 	})
 }

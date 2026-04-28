@@ -21,23 +21,24 @@ const (
 )
 
 type User struct {
-	ID                uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	Email             *string        `gorm:"type:varchar(255);uniqueIndex:idx_users_email" json:"email"`
-	FullName          string         `gorm:"type:varchar(255);not null"                     json:"full_name"`
-	AvatarURL         *string        `gorm:"type:text"                                      json:"avatar_url"`
-	PasswordHash      *string        `gorm:"type:text"                                      json:"-"`
-	AuthProvider      *string        `gorm:"type:varchar(50)"                               json:"auth_provider,omitempty"`
-	ProviderID        *string        `gorm:"type:varchar(255)"                              json:"provider_id,omitempty"`
-	Role              UserRole       `gorm:"type:varchar(20);default:'user';not null"       json:"role"`
-	Status            UserStatus     `gorm:"type:varchar(20);default:'active'"              json:"status"`
-	IsBanned          bool           `gorm:"default:false;not null"                         json:"is_banned"`
-	IsVerified        bool           `gorm:"default:false;not null"                         json:"is_verified"`
-	VerificationToken *string        `gorm:"type:text;index"                                json:"-"`
-	TokenExpiresAt    *time.Time     `                                                      json:"-"`
-	LastLoginAt       *time.Time     `                                                      json:"last_login_at"`
-	CreatedAt         time.Time      `                                                      json:"created_at"`
-	UpdatedAt         time.Time      `                                                      json:"updated_at"`
-	DeletedAt         gorm.DeletedAt `gorm:"index"                                          json:"-"`
+	ID                 uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	Email              *string        `gorm:"type:varchar(255);uniqueIndex:idx_users_email" json:"email"`
+	FullName           string         `gorm:"type:varchar(255);not null"                     json:"full_name"`
+	AvatarURL          *string        `gorm:"type:text"                                      json:"avatar_url"`
+	PasswordHash       *string        `gorm:"type:text"                                      json:"-"`
+	AuthProvider       *string        `gorm:"type:varchar(50)"                               json:"auth_provider,omitempty"`
+	ProviderID         *string        `gorm:"type:varchar(255)"                              json:"provider_id,omitempty"`
+	Role               UserRole       `gorm:"type:varchar(20);default:'user';not null"       json:"role"`
+	Status             UserStatus     `gorm:"type:varchar(20);default:'active'"              json:"status"`
+	IsBanned           bool           `gorm:"default:false;not null"                         json:"is_banned"`
+	IsVerified         bool           `gorm:"default:false;not null"                         json:"is_verified"`
+	VerificationToken  *string        `gorm:"type:text;index"                                json:"-"`
+	TokenExpiresAt     *time.Time     `                                                      json:"-"`
+	VerificationSentAt *time.Time     `                                                      json:"-"`
+	LastLoginAt        *time.Time     `                                                      json:"last_login_at"`
+	CreatedAt          time.Time      `                                                      json:"created_at"`
+	UpdatedAt          time.Time      `                                                      json:"updated_at"`
+	DeletedAt          gorm.DeletedAt `gorm:"index"                                          json:"-"`
 
 	VibeProfile *VibeProfile `gorm:"foreignKey:UserID"             json:"vibe_profile,omitempty"`
 }
@@ -97,6 +98,22 @@ type VibeProfile struct {
 	CountriesVisited   int            `gorm:"default:0"                                      json:"countries_visited"`
 	CreatedAt          time.Time      `                                                      json:"created_at"`
 	UpdatedAt          time.Time      `                                                      json:"updated_at"`
+}
+
+type PasswordResetCode struct {
+	ID         uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	UserID     uuid.UUID  `gorm:"type:uuid;not null;index"                      json:"user_id"`
+	Email      string     `gorm:"type:varchar(255);not null;index"              json:"email"`
+	HashedCode string     `gorm:"type:text;not null"                            json:"-"`
+	ExpiresAt  time.Time  `gorm:"not null"                                      json:"expires_at"`
+	Attempts   int        `gorm:"default:0"                                     json:"attempts"`
+	UsedAt     *time.Time `gorm:"index"                                          json:"used_at"`
+	CreatedAt  time.Time  `gorm:"autoCreateTime"                                json:"created_at"`
+	UpdatedAt  time.Time  `gorm:"autoUpdateTime"                                json:"updated_at"`
+}
+
+func (PasswordResetCode) TableName() string {
+	return "password_reset_codes"
 }
 
 type RegisterRequest struct {

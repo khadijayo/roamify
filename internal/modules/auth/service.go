@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/big"
 	"net/url"
 	"strings"
 	"time"
@@ -20,15 +21,27 @@ import (
 	"gorm.io/gorm"
 )
 
-const verificationTTL = 15 * time.Minute
+const (
+	verificationTTL             = 15 * time.Minute
+	resetCodeTTL                = 10 * time.Minute
+	resetCodeMaxAttempts        = 5
+	resetCodeRateLimit          = 1 * time.Minute
+	resendVerificationRateLimit = 1 * time.Minute
+)
 
 var (
-	ErrInvalidCredentials       = errors.New("invalid email or password")
-	ErrEmailAlreadyRegistered   = errors.New("email already registered")
-	ErrEmailNotVerified         = errors.New("please verify your email before logging in")
-	ErrAccountBanned            = errors.New("your account has been banned")
-	ErrInvalidVerificationToken = errors.New("invalid or expired verification token")
-	ErrVerificationEmailFailed  = errors.New("failed to send verification email")
+	ErrInvalidCredentials            = errors.New("invalid email or password")
+	ErrEmailAlreadyRegistered        = errors.New("email already registered")
+	ErrEmailNotVerified              = errors.New("please verify your email before logging in")
+	ErrAccountBanned                 = errors.New("your account has been banned")
+	ErrInvalidVerificationToken      = errors.New("invalid or expired verification token")
+	ErrVerificationEmailFailed       = errors.New("failed to send verification email")
+	ErrInvalidResetCode              = errors.New("invalid or expired reset code")
+	ErrTooManyResetAttempts          = errors.New("too many invalid reset attempts")
+	ErrResetCodeSendFailed           = errors.New("failed to send password reset code")
+	ErrResetCodeRecentlySent         = errors.New("please wait before requesting another reset code")
+	ErrVerificationResendRateLimited = errors.New("please wait before resending verification email")
+	ErrVerificationResendFailed      = errors.New("failed to resend verification email")
 )
 
 type RegisterRequest struct {
@@ -50,6 +63,25 @@ type SocialAuthRequest struct {
 	AvatarURL      *string `json:"avatar_url"`
 }
 
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+type VerifyResetCodeRequest struct {
+	Email string `json:"email" binding:"required,email"`
+	Code  string `json:"code" binding:"required,len=6"`
+}
+
+type ResetPasswordRequest struct {
+	Email       string `json:"email" binding:"required,email"`
+	Code        string `json:"code" binding:"required,len=6"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+type ResendVerificationRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
 type RegisterResponse struct {
 	User                  *users.User `json:"user"`
 	VerificationSent      bool        `json:"verification_sent"`
@@ -65,11 +97,20 @@ type VerifyEmailResponse struct {
 	IsVerified bool `json:"is_verified"`
 }
 
+type ActionResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message,omitempty"`
+}
+
 type Service interface {
 	Register(ctx context.Context, req *RegisterRequest) (*RegisterResponse, error)
 	Login(ctx context.Context, req *LoginRequest) (*AuthResponse, error)
 	SocialAuth(ctx context.Context, req *SocialAuthRequest) (*AuthResponse, error)
 	VerifyEmail(ctx context.Context, token string) (*VerifyEmailResponse, error)
+	ForgotPassword(ctx context.Context, req *ForgotPasswordRequest) (*ActionResponse, error)
+	VerifyResetCode(ctx context.Context, req *VerifyResetCodeRequest) (*ActionResponse, error)
+	ResetPassword(ctx context.Context, req *ResetPasswordRequest) (*ActionResponse, error)
+	ResendVerification(ctx context.Context, req *ResendVerificationRequest) (*ActionResponse, error)
 }
 
 type service struct {
@@ -122,6 +163,7 @@ func (s *service) Register(ctx context.Context, req *RegisterRequest) (*Register
 		existing.PasswordHash = &hashValue
 		existing.VerificationToken = &hashedToken
 		existing.TokenExpiresAt = &expiresAt
+		existing.VerificationSentAt = ptrTime(time.Now().UTC())
 		existing.IsVerified = false
 		existing.IsBanned = false
 		existing.Role = users.RoleUser
@@ -143,15 +185,16 @@ func (s *service) Register(ctx context.Context, req *RegisterRequest) (*Register
 
 	hashValue := string(hash)
 	user := &users.User{
-		FullName:          fullName,
-		Email:             &email,
-		PasswordHash:      &hashValue,
-		Role:              users.RoleUser,
-		Status:            users.StatusActive,
-		IsVerified:        false,
-		IsBanned:          false,
-		VerificationToken: &hashedToken,
-		TokenExpiresAt:    &expiresAt,
+		FullName:           fullName,
+		Email:              &email,
+		PasswordHash:       &hashValue,
+		Role:               users.RoleUser,
+		Status:             users.StatusActive,
+		IsVerified:         false,
+		IsBanned:           false,
+		VerificationToken:  &hashedToken,
+		TokenExpiresAt:     &expiresAt,
+		VerificationSentAt: ptrTime(time.Now().UTC()),
 	}
 
 	if err := s.repo.CreateUser(ctx, user); err != nil {
@@ -261,6 +304,181 @@ func (s *service) SocialAuth(ctx context.Context, req *SocialAuthRequest) (*Auth
 	return &AuthResponse{Token: token, User: user}, nil
 }
 
+func (s *service) ForgotPassword(ctx context.Context, req *ForgotPasswordRequest) (*ActionResponse, error) {
+	email := normalizeEmail(req.Email)
+	user, err := s.repo.FindByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &ActionResponse{Success: true, Message: "If an account exists, a reset code has been sent."}, nil
+		}
+		return nil, err
+	}
+
+	existing, err := s.repo.FindLatestPasswordResetCodeByEmail(ctx, email)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	if existing != nil && existing.ExpiresAt.After(time.Now().UTC()) {
+		if time.Since(existing.CreatedAt) < resetCodeRateLimit {
+			return nil, ErrResetCodeRecentlySent
+		}
+	}
+
+	rawCode, hashedCode, expiresAt, err := generateResetCode()
+	if err != nil {
+		return nil, err
+	}
+
+	reset := &users.PasswordResetCode{
+		UserID:     user.ID,
+		Email:      email,
+		HashedCode: hashedCode,
+		ExpiresAt:  expiresAt,
+		Attempts:   0,
+	}
+	if err := s.repo.CreatePasswordResetCode(ctx, reset); err != nil {
+		return nil, err
+	}
+
+	if err := s.emailService.SendPasswordResetCode(ctx, email, user.FullName, rawCode); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrResetCodeSendFailed, err)
+	}
+
+	return &ActionResponse{Success: true, Message: "If an account exists, a reset code has been sent."}, nil
+}
+
+func (s *service) VerifyResetCode(ctx context.Context, req *VerifyResetCodeRequest) (*ActionResponse, error) {
+	email := normalizeEmail(req.Email)
+	code := strings.TrimSpace(req.Code)
+	if code == "" {
+		return nil, ErrInvalidResetCode
+	}
+
+	reset, err := s.repo.FindLatestPasswordResetCodeByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrInvalidResetCode
+		}
+		return nil, err
+	}
+
+	if reset == nil || reset.UsedAt != nil || time.Now().UTC().After(reset.ExpiresAt) {
+		return nil, ErrInvalidResetCode
+	}
+
+	if reset.Attempts >= resetCodeMaxAttempts {
+		return nil, ErrTooManyResetAttempts
+	}
+
+	if !compareHashCode(code, reset.HashedCode) {
+		reset.Attempts++
+		if err := s.repo.UpdatePasswordResetCode(ctx, reset); err != nil {
+			return nil, err
+		}
+		if reset.Attempts >= resetCodeMaxAttempts {
+			return nil, ErrTooManyResetAttempts
+		}
+		return nil, ErrInvalidResetCode
+	}
+
+	return &ActionResponse{Success: true, Message: "Reset code is valid."}, nil
+}
+
+func (s *service) ResetPassword(ctx context.Context, req *ResetPasswordRequest) (*ActionResponse, error) {
+	email := normalizeEmail(req.Email)
+	code := strings.TrimSpace(req.Code)
+	if code == "" {
+		return nil, ErrInvalidResetCode
+	}
+
+	reset, err := s.repo.FindLatestPasswordResetCodeByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrInvalidResetCode
+		}
+		return nil, err
+	}
+
+	if reset == nil || reset.UsedAt != nil || time.Now().UTC().After(reset.ExpiresAt) {
+		return nil, ErrInvalidResetCode
+	}
+
+	if reset.Attempts >= resetCodeMaxAttempts {
+		return nil, ErrTooManyResetAttempts
+	}
+
+	if !compareHashCode(code, reset.HashedCode) {
+		reset.Attempts++
+		if err := s.repo.UpdatePasswordResetCode(ctx, reset); err != nil {
+			return nil, err
+		}
+		if reset.Attempts >= resetCodeMaxAttempts {
+			return nil, ErrTooManyResetAttempts
+		}
+		return nil, ErrInvalidResetCode
+	}
+
+	user, err := s.repo.FindByEmail(ctx, email)
+	if err != nil {
+		return nil, ErrInvalidResetCode
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	hashValue := string(hash)
+	user.PasswordHash = &hashValue
+	if err := s.repo.UpdateUser(ctx, user); err != nil {
+		return nil, err
+	}
+
+	if err := s.repo.DeletePasswordResetCodesByEmail(ctx, email); err != nil {
+		return nil, err
+	}
+
+	return &ActionResponse{Success: true, Message: "Password reset successfully."}, nil
+}
+
+func (s *service) ResendVerification(ctx context.Context, req *ResendVerificationRequest) (*ActionResponse, error) {
+	email := normalizeEmail(req.Email)
+	user, err := s.repo.FindByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &ActionResponse{Success: true, Message: "If an account exists, verification will be resent."}, nil
+		}
+		return nil, err
+	}
+
+	if user.IsVerified {
+		return &ActionResponse{Success: true, Message: "Email already verified."}, nil
+	}
+
+	if user.VerificationSentAt != nil && time.Since(*user.VerificationSentAt) < resendVerificationRateLimit {
+		return nil, ErrVerificationResendRateLimited
+	}
+
+	rawToken, hashedToken, expiresAt, err := generateVerificationToken()
+	if err != nil {
+		return nil, err
+	}
+
+	user.VerificationToken = &hashedToken
+	user.TokenExpiresAt = &expiresAt
+	now := time.Now().UTC()
+	user.VerificationSentAt = &now
+	if err := s.repo.UpdateUser(ctx, user); err != nil {
+		return nil, err
+	}
+
+	if err := s.sendVerification(ctx, email, user.FullName, rawToken); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrVerificationResendFailed, err)
+	}
+
+	return &ActionResponse{Success: true, Message: "Verification email resent."}, nil
+}
+
 func (s *service) VerifyEmail(ctx context.Context, token string) (*VerifyEmailResponse, error) {
 	token = strings.TrimSpace(token)
 	if token == "" {
@@ -313,7 +531,6 @@ func sanitizeAppBaseURL(raw string) string {
 		return strings.TrimRight(raw, "/")
 	}
 
-	// Keep only scheme + host to prevent malformed links like /swagger/#/... from env mistakes.
 	u.Path = ""
 	u.RawPath = ""
 	u.RawQuery = ""
@@ -354,7 +571,32 @@ func generateVerificationToken() (rawToken, hashedToken string, expiresAt time.T
 	return rawToken, hashedToken, expiresAt, nil
 }
 
+func generateResetCode() (string, string, time.Time, error) {
+	number, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		return "", "", time.Time{}, err
+	}
+
+	raw := fmt.Sprintf("%06d", number.Int64())
+	hashed := hashCode(raw)
+	expiresAt := time.Now().UTC().Add(resetCodeTTL)
+	return raw, hashed, expiresAt, nil
+}
+
 func hashToken(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
+}
+
+func hashCode(code string) string {
+	sum := sha256.Sum256([]byte(code))
+	return hex.EncodeToString(sum[:])
+}
+
+func compareHashCode(code, hashed string) bool {
+	return hashCode(code) == hashed
+}
+
+func ptrTime(t time.Time) *time.Time {
+	return &t
 }

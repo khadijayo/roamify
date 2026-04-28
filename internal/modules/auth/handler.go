@@ -96,3 +96,91 @@ func (h *Handler) VerifyEmail(c *gin.Context) {
 
 	response.OK(c, "email verified", res)
 }
+
+func (h *Handler) ForgotPassword(c *gin.Context) {
+	var req ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	res, err := h.svc.ForgotPassword(c.Request.Context(), &req)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrResetCodeRecentlySent):
+			response.TooManyRequests(c, err.Error())
+		case errors.Is(err, ErrResetCodeSendFailed):
+			response.InternalError(c, err.Error())
+		default:
+			response.BadRequest(c, err.Error())
+		}
+		return
+	}
+
+	response.OK(c, "password reset code requested", res)
+}
+
+func (h *Handler) VerifyResetCode(c *gin.Context) {
+	var req VerifyResetCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	res, err := h.svc.VerifyResetCode(c.Request.Context(), &req)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrInvalidResetCode), errors.Is(err, ErrTooManyResetAttempts):
+			response.BadRequest(c, err.Error())
+		default:
+			response.InternalError(c, err.Error())
+		}
+		return
+	}
+
+	response.OK(c, "reset code verified", res)
+}
+
+func (h *Handler) ResetPassword(c *gin.Context) {
+	var req ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	res, err := h.svc.ResetPassword(c.Request.Context(), &req)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrInvalidResetCode), errors.Is(err, ErrTooManyResetAttempts):
+			response.BadRequest(c, err.Error())
+		default:
+			response.InternalError(c, err.Error())
+		}
+		return
+	}
+
+	response.OK(c, "password reset successful", res)
+}
+
+func (h *Handler) ResendVerification(c *gin.Context) {
+	var req ResendVerificationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	res, err := h.svc.ResendVerification(c.Request.Context(), &req)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrVerificationResendRateLimited):
+			response.TooManyRequests(c, err.Error())
+		case errors.Is(err, ErrVerificationResendFailed):
+			response.InternalError(c, err.Error())
+		default:
+			response.BadRequest(c, err.Error())
+		}
+		return
+	}
+
+	response.OK(c, "verification email resent", res)
+}

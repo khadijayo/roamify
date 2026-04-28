@@ -53,6 +53,10 @@ func Conflict(c *gin.Context, err string) {
 	c.JSON(http.StatusConflict, APIResponse{Success: false, Error: err})
 }
 
+func TooManyRequests(c *gin.Context, err string) {
+	c.JSON(http.StatusTooManyRequests, APIResponse{Success: false, Error: err})
+}
+
 func InternalError(c *gin.Context, err string) {
 	c.JSON(http.StatusInternalServerError, APIResponse{Success: false, Error: err})
 }

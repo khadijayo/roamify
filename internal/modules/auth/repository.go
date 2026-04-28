@@ -18,6 +18,10 @@ type Repository interface {
 	FindByProvider(ctx context.Context, provider, providerID string) (*users.User, error)
 	FindByVerificationToken(ctx context.Context, token string) (*users.User, error)
 	FindByID(ctx context.Context, id uuid.UUID) (*users.User, error)
+	CreatePasswordResetCode(ctx context.Context, code *users.PasswordResetCode) error
+	FindLatestPasswordResetCodeByEmail(ctx context.Context, email string) (*users.PasswordResetCode, error)
+	UpdatePasswordResetCode(ctx context.Context, code *users.PasswordResetCode) error
+	DeletePasswordResetCodesByEmail(ctx context.Context, email string) error
 }
 
 type repository struct {
@@ -79,4 +83,27 @@ func (r *repository) FindByID(ctx context.Context, id uuid.UUID) (*users.User, e
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (r *repository) CreatePasswordResetCode(ctx context.Context, code *users.PasswordResetCode) error {
+	return r.db.WithContext(ctx).Create(code).Error
+}
+
+func (r *repository) FindLatestPasswordResetCodeByEmail(ctx context.Context, email string) (*users.PasswordResetCode, error) {
+	var code users.PasswordResetCode
+	if err := r.db.WithContext(ctx).
+		Where("email = ?", email).
+		Order("created_at DESC").
+		First(&code).Error; err != nil {
+		return nil, err
+	}
+	return &code, nil
+}
+
+func (r *repository) UpdatePasswordResetCode(ctx context.Context, code *users.PasswordResetCode) error {
+	return r.db.WithContext(ctx).Save(code).Error
+}
+
+func (r *repository) DeletePasswordResetCodesByEmail(ctx context.Context, email string) error {
+	return r.db.WithContext(ctx).Where("email = ?", email).Delete(&users.PasswordResetCode{}).Error
 }
