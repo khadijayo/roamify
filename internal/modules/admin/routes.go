@@ -7,7 +7,7 @@ import (
 
 func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
 	group := r.Group("/admin")
-	group.Use(auth, middleware.AdminOnly())
+	group.Use(auth, middleware.RequireAdmin())
 	{
 		group.GET("/users", h.ListUsers)
 		group.GET("/users/:id", h.GetUser)

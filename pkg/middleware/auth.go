@@ -13,6 +13,8 @@ import (
 const UserIDKey = "userID"
 const UserEmailKey = "userEmail"
 const UserRoleKey = "userRole"
+const UserIDContextKey = "user_id"
+const RoleContextKey = "role"
 
 type authUserRecord struct {
 	ID       uuid.UUID `gorm:"column:id"`
@@ -58,14 +60,20 @@ func Auth(secret string, db *gorm.DB) gin.HandlerFunc {
 		}
 
 		c.Set(UserIDKey, user.ID)
+		c.Set(UserIDContextKey, user.ID)
 		email := claims.Email
 		if user.Email != nil && *user.Email != "" {
 			email = *user.Email
 		}
 		c.Set(UserRoleKey, user.Role)
+		c.Set(RoleContextKey, user.Role)
 		c.Set(UserEmailKey, email)
 		c.Next()
 	}
+}
+
+func RequireAuth(secret string, db *gorm.DB) gin.HandlerFunc {
+	return Auth(secret, db)
 }
 
 func GetUserID(c *gin.Context) uuid.UUID {

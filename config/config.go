@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -23,13 +24,9 @@ type Config struct {
 	AppEnv         string
 	GrokKey        string
 	AppBaseURL     string
+	AdminEmails    []string
 
-	SMTPHost      string
-	SMTPPort      string
-	SMTPUsername  string
-	SMTPPassword  string
-	SMTPFromEmail string
-	SMTPFromName  string
+	ResendAPIKey string
 }
 
 var App *Config
@@ -61,13 +58,11 @@ func Load() {
 
 		// ✅ CRITICAL: always use env in production
 		AppBaseURL: getEnv("APP_BASE_URL", "http://localhost:8080"),
+		AdminEmails: parseCSVEnv(
+			getEnv("ADMIN_EMAILS", getEnv("ADMIN_EMAIL", "")),
+		),
 
-		SMTPHost:      getEnv("SMTP_HOST", ""),
-		SMTPPort:      getEnv("SMTP_PORT", "587"),
-		SMTPUsername:  getEnv("SMTP_USERNAME", ""),
-		SMTPPassword:  getEnv("SMTP_PASSWORD", ""),
-		SMTPFromEmail: getEnv("SMTP_FROM_EMAIL", ""),
-		SMTPFromName:  getEnv("SMTP_FROM_NAME", "Roamify"),
+		ResendAPIKey: getEnv("RESEND_API_KEY", ""),
 	}
 
 	// 🔥 Fail fast in production if missing
@@ -94,4 +89,16 @@ func getEnv(key, fallback string) string {
 		return val
 	}
 	return fallback
+}
+
+func parseCSVEnv(raw string) []string {
+	parts := strings.Split(raw, ",")
+	values := make([]string, 0, len(parts))
+	for _, part := range parts {
+		value := strings.ToLower(strings.TrimSpace(part))
+		if value != "" {
+			values = append(values, value)
+		}
+	}
+	return values
 }

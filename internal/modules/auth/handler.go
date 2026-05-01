@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/khadijayo/roamify/pkg/response"
@@ -35,7 +36,11 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, "account created", res)
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "User registered successfully. Check your email to verify.",
+		"data":    res,
+	})
 }
 
 func (h *Handler) Login(c *gin.Context) {
@@ -95,6 +100,29 @@ func (h *Handler) VerifyEmail(c *gin.Context) {
 	}
 
 	response.OK(c, "email verified", res)
+}
+
+func (h *Handler) VerifyEmailPage(c *gin.Context) {
+	if _, err := h.svc.VerifyEmail(c.Request.Context(), c.Query("token")); err != nil {
+		c.Data(http.StatusBadRequest, "text/html; charset=utf-8", []byte(`
+<html>
+  <body style="font-family:sans-serif;text-align:center;margin-top:50px;">
+    <h2>Email verification failed</h2>
+    <p>The verification link is invalid or expired.</p>
+  </body>
+</html>
+`))
+		return
+	}
+
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`
+<html>
+  <body style="font-family:sans-serif;text-align:center;margin-top:50px;">
+    <h2>Email verified successfully</h2>
+    <p>You can now log in.</p>
+  </body>
+</html>
+`))
 }
 
 func (h *Handler) ForgotPassword(c *gin.Context) {

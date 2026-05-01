@@ -6,8 +6,13 @@ import (
 )
 
 func AdminOnly() gin.HandlerFunc {
+	return RequireAdmin()
+}
+
+func RequireAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if GetUserRole(c) != "admin" {
+		role, exists := c.Get(RoleContextKey)
+		if !exists || role != "admin" {
 			response.Forbidden(c, "admin access required")
 			c.Abort()
 			return

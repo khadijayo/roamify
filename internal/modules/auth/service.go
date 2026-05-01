@@ -8,14 +8,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
-	"net/url"
 	"strings"
 	"time"
 
 	"github.com/khadijayo/roamify/config"
 	"github.com/khadijayo/roamify/internal/modules/users"
-	emailsvc "github.com/khadijayo/roamify/internal/services/email"
+	"github.com/khadijayo/roamify/internal/services"
 	pkgjwt "github.com/khadijayo/roamify/pkg/jwt"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -115,19 +115,15 @@ type Service interface {
 
 type service struct {
 	repo           Repository
-	emailService   emailsvc.Service
 	jwtSecret      string
 	jwtExpiryHours int
-	appBaseURL     string
 }
 
-func NewService(repo Repository, emailService emailsvc.Service, cfg *config.Config) Service {
+func NewService(repo Repository, cfg *config.Config) Service {
 	return &service{
 		repo:           repo,
-		emailService:   emailService,
 		jwtSecret:      cfg.JWTSecret,
 		jwtExpiryHours: cfg.JWTExpiryHours,
-		appBaseURL:     sanitizeAppBaseURL(cfg.AppBaseURL),
 	}
 }
 
@@ -172,9 +168,7 @@ func (s *service) Register(ctx context.Context, req *RegisterRequest) (*Register
 			return nil, err
 		}
 
-		if err := s.sendVerification(ctx, email, fullName, rawToken); err != nil {
-			return nil, err
-		}
+		s.sendVerificationAsync(email, rawToken)
 
 		return &RegisterResponse{
 			User:                  existing,
@@ -201,9 +195,7 @@ func (s *service) Register(ctx context.Context, req *RegisterRequest) (*Register
 		return nil, err
 	}
 
-	if err := s.sendVerification(ctx, email, fullName, rawToken); err != nil {
-		return nil, err
-	}
+	s.sendVerificationAsync(email, rawToken)
 
 	return &RegisterResponse{
 		User:                  user,
@@ -340,7 +332,7 @@ func (s *service) ForgotPassword(ctx context.Context, req *ForgotPasswordRequest
 		return nil, err
 	}
 
-	if err := s.emailService.SendPasswordResetCode(ctx, email, user.FullName, rawCode); err != nil {
+	if err := services.SendPasswordResetCode(email, user.FullName, rawCode); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrResetCodeSendFailed, err)
 	}
 
@@ -472,7 +464,7 @@ func (s *service) ResendVerification(ctx context.Context, req *ResendVerificatio
 		return nil, err
 	}
 
-	if err := s.sendVerification(ctx, email, user.FullName, rawToken); err != nil {
+	if err := services.SendVerificationEmail(email, rawToken); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrVerificationResendFailed, err)
 	}
 
@@ -512,31 +504,12 @@ func (s *service) VerifyEmail(ctx context.Context, token string) (*VerifyEmailRe
 	}, nil
 }
 
-func (s *service) sendVerification(ctx context.Context, email, fullName, rawToken string) error {
-	link := fmt.Sprintf("%s/api/v1/auth/verify-email?token=%s", s.appBaseURL, url.QueryEscape(rawToken))
-	if err := s.emailService.SendVerificationEmail(ctx, email, fullName, link); err != nil {
-		return fmt.Errorf("%w: %v", ErrVerificationEmailFailed, err)
-	}
-	return nil
-}
-
-func sanitizeAppBaseURL(raw string) string {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return ""
-	}
-
-	u, err := url.Parse(raw)
-	if err != nil || u.Scheme == "" || u.Host == "" {
-		return strings.TrimRight(raw, "/")
-	}
-
-	u.Path = ""
-	u.RawPath = ""
-	u.RawQuery = ""
-	u.Fragment = ""
-
-	return strings.TrimRight(u.String(), "/")
+func (s *service) sendVerificationAsync(email, rawToken string) {
+	go func() {
+		if err := services.SendVerificationEmail(email, rawToken); err != nil {
+			log.Println("email failed:", err)
+		}
+	}()
 }
 
 func (s *service) issueToken(user *users.User) (string, error) {

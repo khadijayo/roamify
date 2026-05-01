@@ -20,7 +20,6 @@ import (
 	"github.com/khadijayo/roamify/internal/modules/trips"
 	"github.com/khadijayo/roamify/internal/modules/users"
 	"github.com/khadijayo/roamify/internal/modules/wishlist"
-	emailsvc "github.com/khadijayo/roamify/internal/services/email"
 	"github.com/khadijayo/roamify/pkg/middleware"
 )
 
@@ -30,6 +29,7 @@ func main() {
 	config.ConnectDB()
 
 	config.AutoMigrate()
+	config.SeedAdmins()
 
 	// 2. Set Gin mode
 	if config.App.AppEnv == "production" {
@@ -119,11 +119,10 @@ func resolveSwaggerDir() (string, error) {
 // wireModules registers all modules
 func wireModules(api *gin.RouterGroup) {
 	db := config.DB
-	auth := middleware.Auth(config.App.JWTSecret, db)
+	auth := middleware.RequireAuth(config.App.JWTSecret, db)
 
-	emailService := emailsvc.NewService(config.App)
 	authRepo := roamauth.NewRepository(db)
-	authSvc := roamauth.NewService(authRepo, emailService, config.App)
+	authSvc := roamauth.NewService(authRepo, config.App)
 	authHandler := roamauth.NewHandler(authSvc)
 	roamauth.RegisterRoutes(api, authHandler)
 

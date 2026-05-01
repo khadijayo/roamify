@@ -90,6 +90,39 @@
         }
       }
     },
+    "/api/v1/auth/verify": {
+      "get": {
+        "summary": "Verify email page",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/token"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email verified HTML page",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired verification token",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/verify-email": {
       "get": {
         "summary": "Verify email",
