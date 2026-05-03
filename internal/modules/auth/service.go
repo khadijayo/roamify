@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	verificationTTL             = 15 * time.Minute
+	verificationTTL             = 24 * time.Hour
 	resetCodeTTL                = 10 * time.Minute
 	resetCodeMaxAttempts        = 5
 	resetCodeRateLimit          = 1 * time.Minute
@@ -477,7 +477,7 @@ func (s *service) VerifyEmail(ctx context.Context, token string) (*VerifyEmailRe
 		return nil, ErrInvalidVerificationToken
 	}
 
-	user, err := s.repo.FindByVerificationToken(ctx, hashToken(token))
+	user, err := s.findUserByVerificationToken(ctx, token)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrInvalidVerificationToken
@@ -510,6 +510,18 @@ func (s *service) sendVerificationAsync(email, rawToken string) {
 			log.Println("email failed:", err)
 		}
 	}()
+}
+
+func (s *service) findUserByVerificationToken(ctx context.Context, token string) (*users.User, error) {
+	user, err := s.repo.FindByVerificationToken(ctx, hashToken(token))
+	if err == nil {
+		return user, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	return s.repo.FindByVerificationToken(ctx, token)
 }
 
 func (s *service) issueToken(user *users.User) (string, error) {

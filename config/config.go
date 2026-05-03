@@ -26,7 +26,12 @@ type Config struct {
 	AppBaseURL     string
 	AdminEmails    []string
 
-	ResendAPIKey string
+	SMTPHost      string
+	SMTPPort      string
+	SMTPUsername  string
+	SMTPPassword  string
+	SMTPFromEmail string
+	SMTPFromName  string
 }
 
 var App *Config
@@ -62,7 +67,12 @@ func Load() {
 			getEnv("ADMIN_EMAILS", getEnv("ADMIN_EMAIL", "")),
 		),
 
-		ResendAPIKey: getEnv("RESEND_API_KEY", ""),
+		SMTPHost:      getEnv("SMTP_HOST", ""),
+		SMTPPort:      getEnv("SMTP_PORT", "587"),
+		SMTPUsername:  getEnv("SMTP_USERNAME", ""),
+		SMTPPassword:  getEnv("SMTP_PASSWORD", ""),
+		SMTPFromEmail: getEnv("SMTP_FROM_EMAIL", ""),
+		SMTPFromName:  getEnv("SMTP_FROM_NAME", "Roamify"),
 	}
 
 	// 🔥 Fail fast in production if missing
