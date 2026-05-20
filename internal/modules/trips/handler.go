@@ -1,11 +1,12 @@
 package trips
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/khadijayo/roamify/pkg/middleware"
 	"github.com/khadijayo/roamify/pkg/response"
-	"strconv"
 )
 
 type Handler struct {

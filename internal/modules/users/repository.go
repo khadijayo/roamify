@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
