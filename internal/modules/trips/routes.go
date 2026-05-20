@@ -35,6 +35,6 @@ func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
 		trips.GET("/:tripId/map", h.GetTripMapPins)
 
 		r.POST("/trips/:tripId/join", h.JoinTrip)
-		r.GET("/trips/:tripId/members", h.GetMembers)
+		// Removed duplicate registration of /trips/:tripId/members
 	}
 }
