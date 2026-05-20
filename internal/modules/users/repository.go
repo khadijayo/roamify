@@ -1,6 +1,7 @@
 package users
 
 import (
+	"context"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -24,6 +25,7 @@ type Repository interface {
 	GetPrivacySettings(userID uuid.UUID) (*UserPrivacySetting, error)
 	UpsertPrivacySettings(settings *UserPrivacySetting) error
 	SearchUsers(query string, limit int) ([]User, error)
+	GetUserByEmail(ctx context.Context, email string, user *User) error
 }
 
 type repository struct {
@@ -146,4 +148,8 @@ func (r *repository) SearchUsers(query string, limit int) ([]User, error) {
 		Limit(limit).
 		Find(&users).Error
 	return users, err
+}
+
+func (r *repository) GetUserByEmail(ctx context.Context, email string, user *User) error {
+	return r.db.WithContext(ctx).Where("email = ?", email).First(user).Error
 }

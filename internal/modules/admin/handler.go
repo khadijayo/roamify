@@ -21,6 +21,14 @@ type UpdateUserRoleRequest struct {
 	Role string `json:"role" binding:"required,oneof=user admin"`
 }
 
+// AdminLoginRequest is the payload for admin login
+// POST /admin/login
+// { "email": "...", "password": "..." }
+type AdminLoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
 func NewHandler(svc Service) *Handler {
 	return &Handler{svc: svc}
 }
@@ -350,4 +358,31 @@ func (h *Handler) togglePostVisibility(c *gin.Context, fn func(ctx context.Conte
 	}
 
 	response.OK(c, "post updated", item)
+}
+
+// GET /admin/login
+func (h *Handler) AdminLoginPage(c *gin.Context) {
+	c.JSON(200, gin.H{"message": "Admin login page (implement HTML if needed)"})
+}
+
+// POST /admin/login
+func (h *Handler) AdminLogin(c *gin.Context) {
+	var req AdminLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	user, token, err := h.svc.AdminLogin(c.Request.Context(), req.Email, req.Password)
+	if err != nil {
+		response.Forbidden(c, err.Error())
+		return
+	}
+	c.JSON(200, gin.H{
+		"token": token,
+		"user": gin.H{
+			"id":    user.ID,
+			"email": user.Email,
+			"role":  user.Role,
+		},
+	})
 }

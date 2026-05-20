@@ -6,6 +6,9 @@ import (
 )
 
 func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
+	r.GET("/admin/login", h.AdminLoginPage)
+	r.POST("/admin/login", h.AdminLogin)
+
 	group := r.Group("/admin")
 	group.Use(auth, middleware.RequireAdmin())
 	{

@@ -389,3 +389,18 @@ func (h *Handler) GetTripMapPins(c *gin.Context) {
 	}
 	response.OK(c, "map pins fetched", pins)
 }
+
+func (h *Handler) JoinTrip(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	tripID, err := uuid.Parse(c.Param("tripId"))
+	if err != nil {
+		response.BadRequest(c, "invalid trip id")
+		return
+	}
+	member, err := h.svc.JoinTrip(tripID, userID)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	response.Created(c, "joined trip", member)
+}

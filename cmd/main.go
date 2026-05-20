@@ -18,8 +18,10 @@ import (
 	"github.com/khadijayo/roamify/internal/modules/posts"
 	"github.com/khadijayo/roamify/internal/modules/reports"
 	"github.com/khadijayo/roamify/internal/modules/trips"
+	"github.com/khadijayo/roamify/internal/modules/upload"
 	"github.com/khadijayo/roamify/internal/modules/users"
 	"github.com/khadijayo/roamify/internal/modules/wishlist"
+	"github.com/khadijayo/roamify/internal/services"
 	"github.com/khadijayo/roamify/pkg/middleware"
 )
 
@@ -41,7 +43,6 @@ func main() {
 	r.Use(gin.Recovery())
 	r.Use(middleware.Logger())
 	r.Use(middleware.CORS())
-	r.Static("/uploads", "./uploads")
 
 	// 4. Health endpoint
 	r.GET("/health", func(c *gin.Context) {
@@ -149,8 +150,15 @@ func wireModules(api *gin.RouterGroup) {
 
 	postRepo := posts.NewRepository(db)
 	postSvc := posts.NewService(postRepo)
-	postHandler := posts.NewHandler(postSvc)
+	cloudinarySvc, err := services.GetCloudinaryService()
+	if err != nil {
+		log.Fatalf("[cloudinary] %v", err)
+	}
+	postHandler := posts.NewHandler(postSvc, cloudinarySvc)
 	posts.RegisterRoutes(api, postHandler, auth)
+
+	uploadHandler := upload.NewHandler(cloudinarySvc)
+	upload.RegisterRoutes(api, uploadHandler, auth)
 
 	reportRepo := reports.NewRepository(db)
 	reportSvc := reports.NewService(reportRepo)

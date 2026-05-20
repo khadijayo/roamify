@@ -1,8 +1,10 @@
 package users
 
 import (
+	"golang.org/x/crypto/bcrypt"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
@@ -167,4 +169,22 @@ type UpdatePrivacySettingsRequest struct {
 
 type SearchUsersRequest struct {
 	Q string `form:"q"`
+}
+
+func CheckPassword(hashPtr *string, password string) bool {
+	if hashPtr == nil {
+		return false
+	}
+	return bcrypt.CompareHashAndPassword([]byte(*hashPtr), []byte(password)) == nil
+}
+
+func GenerateJWT(user *User, secret string) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": user.ID.String(),
+		"email":   user.Email,
+		"role":    user.Role,
+		"exp":     time.Now().Add(72 * time.Hour).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
 }

@@ -42,6 +42,7 @@ type Service interface {
 	GetChatHistory(tripID uuid.UUID, limit int) ([]ChatMessage, error)
 	SendChatMessage(tripID, userID uuid.UUID, message string) (*ChatMessage, error)
 	GetTripMapPins(tripID uuid.UUID) ([]MapPin, error)
+	JoinTrip(tripID, userID uuid.UUID) (*TripMember, error)
 }
 
 type service struct {
@@ -762,4 +763,28 @@ func (s *service) SendChatMessage(tripID, userID uuid.UUID, message string) (*Ch
 		return nil, err
 	}
 	return msg, nil
+}
+
+func (s *service) JoinTrip(tripID, userID uuid.UUID) (*TripMember, error) {
+	trip, err := s.repo.FindTripByID(tripID)
+	if err != nil {
+		return nil, errors.New("trip not found")
+	}
+	if trip.OwnerUserID == userID {
+		return nil, errors.New("creator is already a member")
+	}
+	m, err := s.repo.FindMember(tripID, userID)
+	if err == nil && m != nil {
+		return nil, errors.New("already a member")
+	}
+	member := &TripMember{
+		TripID:     tripID,
+		UserID:     userID,
+		Role:       RoleMember,
+		JoinStatus: JoinStatusJoined,
+	}
+	if err := s.repo.AddMember(member); err != nil {
+		return nil, err
+	}
+	return member, nil
 }

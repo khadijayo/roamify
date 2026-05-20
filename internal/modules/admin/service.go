@@ -67,6 +67,9 @@ type Service interface {
 	ListReports(ctx context.Context, page, limit int, status string) ([]reports.Report, *response.Meta, error)
 	ResolveReport(ctx context.Context, reportID uuid.UUID) (*reports.Report, error)
 	GetStats(ctx context.Context) (*AdminStats, error)
+
+	// AdminLogin authenticates an admin user and returns a JWT if valid
+	AdminLogin(ctx context.Context, email, password string) (*users.User, string, error)
 }
 
 type service struct {
@@ -398,6 +401,27 @@ func (s *service) ResolveReport(ctx context.Context, reportID uuid.UUID) (*repor
 
 func (s *service) GetStats(ctx context.Context) (*AdminStats, error) {
 	return s.repo.GetStats(ctx)
+}
+
+func (s *service) AdminLogin(ctx context.Context, email, password string) (*users.User, string, error) {
+	var user users.User
+	err := s.repo.GetUserByEmail(ctx, email, &user)
+	if err != nil {
+		return nil, "", errors.New("invalid credentials")
+	}
+	if user.Role != users.RoleAdmin {
+		return nil, "", errors.New("not an admin user")
+	}
+	if !users.CheckPassword(user.PasswordHash, password) {
+		return nil, "", errors.New("invalid credentials")
+	}
+	// Generate JWT
+	secret := "" // TODO: inject config
+	token, err := users.GenerateJWT(&user, secret)
+	if err != nil {
+		return nil, "", errors.New("failed to generate token")
+	}
+	return &user, token, nil
 }
 
 func normalizePage(page, limit int) (int, int) {

@@ -6,29 +6,29 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/khadijayo/roamify/internal/services"
 	"github.com/khadijayo/roamify/pkg/middleware"
 	"github.com/khadijayo/roamify/pkg/response"
 	"gorm.io/gorm"
 )
 
 type Handler struct {
-	svc Service
+	svc   Service
+	cloud *services.CloudinaryService
 }
 
-func NewHandler(svc Service) *Handler {
-	return &Handler{svc: svc}
+func NewHandler(svc Service, cloud *services.CloudinaryService) *Handler {
+	return &Handler{svc: svc, cloud: cloud}
 }
 
 func (h *Handler) CreatePost(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	req, err := bindCreatePostRequest(c)
+	req, err := h.bindCreatePostRequest(c)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -223,9 +223,9 @@ func (h *Handler) DeleteComment(c *gin.Context) {
 	response.OK(c, "comment deleted", gin.H{"comment_id": commentID})
 }
 
-func bindCreatePostRequest(c *gin.Context) (*CreatePostRequest, error) {
+func (h *Handler) bindCreatePostRequest(c *gin.Context) (*CreatePostRequest, error) {
 	if strings.HasPrefix(c.ContentType(), "multipart/form-data") {
-		return bindMultipartCreatePostRequest(c)
+		return h.bindMultipartCreatePostRequest(c)
 	}
 
 	var req CreatePostRequest
@@ -235,7 +235,7 @@ func bindCreatePostRequest(c *gin.Context) (*CreatePostRequest, error) {
 	return &req, nil
 }
 
-func bindMultipartCreatePostRequest(c *gin.Context) (*CreatePostRequest, error) {
+func (h *Handler) bindMultipartCreatePostRequest(c *gin.Context) (*CreatePostRequest, error) {
 	req := &CreatePostRequest{
 		Content:    strings.TrimSpace(c.PostForm("content")),
 		Location:   strings.TrimSpace(c.PostForm("location")),
@@ -261,7 +261,7 @@ func bindMultipartCreatePostRequest(c *gin.Context) (*CreatePostRequest, error) 
 		return nil, err
 	}
 	if fileHeader != nil {
-		storedURL, err := saveUploadedPostImage(c, fileHeader)
+		storedURL, err := h.uploadPostImage(c, fileHeader)
 		if err != nil {
 			return nil, err
 		}
@@ -269,6 +269,25 @@ func bindMultipartCreatePostRequest(c *gin.Context) (*CreatePostRequest, error) 
 	}
 
 	return req, nil
+}
+
+func (h *Handler) uploadPostImage(c *gin.Context, file *multipart.FileHeader) (string, error) {
+	if h.cloud == nil {
+		return "", errors.New("cloudinary service is not configured")
+	}
+
+	uploadedFile, err := file.Open()
+	if err != nil {
+		return "", fmt.Errorf("open uploaded file: %w", err)
+	}
+	defer uploadedFile.Close()
+
+	result, err := h.cloud.Upload(c.Request.Context(), uploadedFile, file.Filename)
+	if err != nil {
+		return "", err
+	}
+
+	return result.SecureURL, nil
 }
 
 func parsePostTags(c *gin.Context) ([]string, error) {
@@ -319,23 +338,4 @@ func firstUploadedFile(c *gin.Context, fieldNames ...string) (*multipart.FileHea
 		}
 	}
 	return nil, nil
-}
-
-func saveUploadedPostImage(c *gin.Context, file *multipart.FileHeader) (string, error) {
-	if err := os.MkdirAll(filepath.Join("uploads", "posts"), 0o755); err != nil {
-		return "", fmt.Errorf("create upload directory: %w", err)
-	}
-
-	ext := strings.ToLower(filepath.Ext(file.Filename))
-	if ext == "" {
-		ext = ".bin"
-	}
-	filename := uuid.NewString() + ext
-	dst := filepath.Join("uploads", "posts", filename)
-
-	if err := c.SaveUploadedFile(file, dst); err != nil {
-		return "", fmt.Errorf("save uploaded image: %w", err)
-	}
-
-	return "/uploads/posts/" + filename, nil
 }

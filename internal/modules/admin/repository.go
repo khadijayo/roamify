@@ -41,6 +41,8 @@ type Repository interface {
 	FindReportByID(ctx context.Context, id uuid.UUID) (*reports.Report, error)
 	UpdateReport(ctx context.Context, report *reports.Report) error
 	GetStats(ctx context.Context) (*AdminStats, error)
+
+	GetUserByEmail(ctx context.Context, email string, user *users.User) error
 }
 
 type repository struct {
@@ -328,4 +330,8 @@ func (r *repository) GetStats(ctx context.Context) (*AdminStats, error) {
 		NewUsersThisWeek: newUsers,
 		BannedUsers:      banned,
 	}, nil
+}
+
+func (r *repository) GetUserByEmail(ctx context.Context, email string, user *users.User) error {
+	return r.db.WithContext(ctx).Where("email = ?", email).First(user).Error
 }
