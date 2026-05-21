@@ -502,9 +502,8 @@
           }
         }
       }
-    }
-  },
-  "/api/v1/notifications/settings": {
+    },
+    "/api/v1/notifications/settings": {
     "get": {
       "summary": "Get notification settings",
       "responses": {
@@ -1997,6 +1996,7 @@
         }
       }
     }
+  }
   },
   "components": {
     "securitySchemes": {

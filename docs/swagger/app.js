@@ -15,7 +15,7 @@
       }
 
       SwaggerUIBundle({
-        url: "openapi.json",
+        url: "openapi.json?v=" + Date.now(),
         dom_id: "#swagger-ui",
         deepLinking: true,
         presets: [SwaggerUIBundle.presets.apis],
