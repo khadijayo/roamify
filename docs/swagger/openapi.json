@@ -1998,26 +1998,6 @@
       }
     }
   },
-  "/api/v1/assistant/travel": {
-    "post": {
-      "summary": "Travel assistant",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/AssistantRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
   "components": {
     "securitySchemes": {
       "bearerAuth": {
