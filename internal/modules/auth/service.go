@@ -527,9 +527,14 @@ func (s *service) findUserByVerificationToken(ctx context.Context, token string)
 func (s *service) issueToken(user *users.User) (string, error) {
 	email := "social-auth@roamify.local"
 	if user.Email != nil {
-		email = *user.Email
+		email = normalizeEmail(*user.Email)
 	}
-	return pkgjwt.Generate(user.ID, email, string(user.Role), s.jwtSecret, s.jwtExpiryHours)
+
+	role := strings.ToLower(strings.TrimSpace(string(user.Role)))
+	if role == "" {
+		role = string(users.RoleUser)
+	}
+	return pkgjwt.Generate(user.ID, email, role, s.jwtSecret, s.jwtExpiryHours)
 }
 
 func normalizeEmail(email string) string {

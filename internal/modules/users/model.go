@@ -1,6 +1,8 @@
 package users
 
 import (
+	"errors"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -180,10 +182,23 @@ func CheckPassword(hashPtr *string, password string) bool {
 }
 
 func GenerateJWT(user *User, secret string) (string, error) {
+	secret = strings.TrimSpace(secret)
+	if secret == "" {
+		return "", errors.New("jwt secret is required")
+	}
+	role := strings.ToLower(strings.TrimSpace(string(user.Role)))
+	if role == "" {
+		role = string(RoleUser)
+	}
+	email := ""
+	if user.Email != nil {
+		email = strings.ToLower(strings.TrimSpace(*user.Email))
+	}
+
 	claims := jwt.MapClaims{
 		"user_id": user.ID.String(),
-		"email":   user.Email,
-		"role":    user.Role,
+		"email":   email,
+		"role":    role,
 		"exp":     time.Now().Add(72 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

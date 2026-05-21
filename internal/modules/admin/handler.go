@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -18,7 +19,7 @@ type Handler struct {
 }
 
 type UpdateUserRoleRequest struct {
-	Role string `json:"role" binding:"required,oneof=user admin"`
+	Role string `json:"role" binding:"required"`
 }
 
 // AdminLoginRequest is the payload for admin login
@@ -82,7 +83,13 @@ func (h *Handler) UpdateUserRole(c *gin.Context) {
 		return
 	}
 
-	item, err := h.svc.ChangeUserRole(c.Request.Context(), targetID, users.UserRole(req.Role))
+	role := strings.ToLower(strings.TrimSpace(req.Role))
+	if role != string(users.RoleUser) && role != string(users.RoleAdmin) {
+		response.BadRequest(c, "role must be user or admin")
+		return
+	}
+
+	item, err := h.svc.ChangeUserRole(c.Request.Context(), targetID, users.UserRole(role))
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrTargetNotFound):

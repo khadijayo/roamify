@@ -13,6 +13,7 @@ import (
 	"github.com/khadijayo/roamify/internal/modules/reports"
 	"github.com/khadijayo/roamify/internal/modules/trips"
 	"github.com/khadijayo/roamify/internal/modules/users"
+	pkgjwt "github.com/khadijayo/roamify/pkg/jwt"
 	"github.com/khadijayo/roamify/pkg/response"
 	"gorm.io/gorm"
 )
@@ -73,11 +74,17 @@ type Service interface {
 }
 
 type service struct {
-	repo Repository
+	repo           Repository
+	jwtSecret      string
+	jwtExpiryHours int
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo: repo}
+func NewService(repo Repository, jwtSecret string, jwtExpiryHours int) Service {
+	return &service{
+		repo:           repo,
+		jwtSecret:      jwtSecret,
+		jwtExpiryHours: jwtExpiryHours,
+	}
 }
 
 func (s *service) ListUsers(ctx context.Context, page, limit int, status, query string) ([]users.User, *response.Meta, error) {
@@ -122,6 +129,11 @@ func (s *service) GetUserDetails(ctx context.Context, targetID uuid.UUID) (*User
 }
 
 func (s *service) ChangeUserRole(ctx context.Context, targetID uuid.UUID, role users.UserRole) (*users.User, error) {
+	role = users.UserRole(strings.ToLower(strings.TrimSpace(string(role))))
+	if role != users.RoleUser && role != users.RoleAdmin {
+		return nil, errors.New("role must be user or admin")
+	}
+
 	user, err := s.repo.FindUserByID(ctx, targetID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -405,19 +417,21 @@ func (s *service) GetStats(ctx context.Context) (*AdminStats, error) {
 
 func (s *service) AdminLogin(ctx context.Context, email, password string) (*users.User, string, error) {
 	var user users.User
-	err := s.repo.GetUserByEmail(ctx, email, &user)
+	err := s.repo.GetUserByEmail(ctx, strings.ToLower(strings.TrimSpace(email)), &user)
 	if err != nil {
 		return nil, "", errors.New("invalid credentials")
 	}
-	if user.Role != users.RoleAdmin {
+	if users.UserRole(strings.ToLower(strings.TrimSpace(string(user.Role)))) != users.RoleAdmin {
 		return nil, "", errors.New("not an admin user")
 	}
 	if !users.CheckPassword(user.PasswordHash, password) {
 		return nil, "", errors.New("invalid credentials")
 	}
-	// Generate JWT
-	secret := "" // TODO: inject config
-	token, err := users.GenerateJWT(&user, secret)
+	loginEmail := ""
+	if user.Email != nil {
+		loginEmail = *user.Email
+	}
+	token, err := pkgjwt.Generate(user.ID, loginEmail, string(users.RoleAdmin), s.jwtSecret, s.jwtExpiryHours)
 	if err != nil {
 		return nil, "", errors.New("failed to generate token")
 	}

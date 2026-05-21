@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -16,15 +17,30 @@ type Claims struct {
 }
 
 func Generate(userID uuid.UUID, email, role, secret string, expiryHours int) (string, error) {
+	secret = strings.TrimSpace(secret)
+	if secret == "" {
+		return "", errors.New("jwt secret is required")
+	}
+	if userID == uuid.Nil {
+		return "", errors.New("user id is required")
+	}
+
+	normalizedRole := strings.ToLower(strings.TrimSpace(role))
+	if normalizedRole == "" {
+		normalizedRole = "user"
+	}
+
 	expiry := time.Duration(expiryHours) * time.Hour
+	now := time.Now().UTC()
 
 	claims := Claims{
 		UserID: userID,
-		Email:  email,
-		Role:   role,
+		Email:  strings.ToLower(strings.TrimSpace(email)),
+		Role:   normalizedRole,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiry)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Subject:   userID.String(),
+			ExpiresAt: jwt.NewNumericDate(now.Add(expiry)),
+			IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}
 
@@ -33,6 +49,15 @@ func Generate(userID uuid.UUID, email, role, secret string, expiryHours int) (st
 }
 
 func Parse(tokenStr string, secret string) (*Claims, error) {
+	tokenStr = strings.TrimSpace(tokenStr)
+	secret = strings.TrimSpace(secret)
+	if tokenStr == "" {
+		return nil, errors.New("token is required")
+	}
+	if secret == "" {
+		return nil, errors.New("jwt secret is required")
+	}
+
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")

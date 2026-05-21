@@ -166,7 +166,7 @@ func wireModules(api *gin.RouterGroup) {
 	reports.RegisterRoutes(api, reportHandler, auth)
 
 	adminRepo := admin.NewRepository(db)
-	adminSvc := admin.NewService(adminRepo)
+	adminSvc := admin.NewService(adminRepo, config.App.JWTSecret, config.App.JWTExpiryHours)
 	adminHandler := admin.NewHandler(adminSvc)
 	admin.RegisterRoutes(api, adminHandler, auth)
 
