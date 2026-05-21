@@ -15,6 +15,11 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	ErrTripNotFound      = errors.New("trip not found")
+	ErrAlreadyTripMember = errors.New("already joined this trip")
+)
+
 type Service interface {
 	CreateTrip(ownerID uuid.UUID, req *CreateTripRequest) (*Trip, error)
 	GetTrip(tripID, requesterID uuid.UUID) (*Trip, error)
@@ -768,22 +773,44 @@ func (s *service) SendChatMessage(tripID, userID uuid.UUID, message string) (*Ch
 func (s *service) JoinTrip(tripID, userID uuid.UUID) (*TripMember, error) {
 	trip, err := s.repo.FindTripByID(tripID)
 	if err != nil {
-		return nil, errors.New("trip not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrTripNotFound
+		}
+		return nil, err
 	}
 	if trip.OwnerUserID == userID {
-		return nil, errors.New("creator is already a member")
+		return nil, ErrAlreadyTripMember
 	}
+
+	now := time.Now()
 	m, err := s.repo.FindMember(tripID, userID)
 	if err == nil && m != nil {
-		return nil, errors.New("already a member")
+		if m.JoinStatus == JoinStatusJoined {
+			return nil, ErrAlreadyTripMember
+		}
+		m.Role = RoleMember
+		m.JoinStatus = JoinStatusJoined
+		m.JoinedAt = &now
+		if err := s.repo.UpdateMember(m); err != nil {
+			return nil, err
+		}
+		return m, nil
 	}
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
 	member := &TripMember{
 		TripID:     tripID,
 		UserID:     userID,
 		Role:       RoleMember,
 		JoinStatus: JoinStatusJoined,
+		JoinedAt:   &now,
 	}
 	if err := s.repo.AddMember(member); err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "duplicate") {
+			return nil, ErrAlreadyTripMember
+		}
 		return nil, err
 	}
 	return member, nil

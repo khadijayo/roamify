@@ -59,8 +59,8 @@ type Trip struct {
 
 type TripMember struct {
 	ID         uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	TripID     uuid.UUID  `gorm:"type:uuid;not null;index"                       json:"trip_id"`
-	UserID     uuid.UUID  `gorm:"type:uuid;not null;index"                       json:"user_id"`
+	TripID     uuid.UUID  `gorm:"type:uuid;not null;index;uniqueIndex:idx_trip_members_trip_user" json:"trip_id"`
+	UserID     uuid.UUID  `gorm:"type:uuid;not null;index;uniqueIndex:idx_trip_members_trip_user" json:"user_id"`
 	Role       Role       `gorm:"type:varchar(20);default:'member'"              json:"role"`
 	JoinStatus JoinStatus `gorm:"type:varchar(20);default:'invited'"             json:"join_status"`
 	JoinedAt   *time.Time `                                                      json:"joined_at"`

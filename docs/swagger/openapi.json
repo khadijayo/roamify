@@ -423,8 +423,8 @@
     },
     "/api/v1/trips/{tripId}/join": {
       "post": {
-        "summary": "Join trip squad",
-        "description": "Join a trip as a member. Auth required.",
+        "summary": "Join a shared trip",
+        "description": "Allows the authenticated user to join the trip themselves. Creator privileges are not required. If the user was invited previously, their membership is marked as joined.",
         "parameters": [
           {
             "$ref": "#/components/parameters/tripId"
@@ -437,13 +437,39 @@
         ],
         "responses": {
           "200": {
-            "description": "Joined successfully"
+            "description": "Joined successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Joined trip successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/TripMember"
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
-            "description": "Already a member or invalid request"
+            "description": "Invalid trip id"
           },
           "401": {
             "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Trip does not exist"
+          },
+          "409": {
+            "description": "User already joined this trip"
           }
         }
       }
