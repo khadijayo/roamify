@@ -46,8 +46,13 @@ func SendVerificationEmailResend(to string, token string) error {
 		verifyURL,
 	)
 
+	fromEmail := strings.TrimSpace(os.Getenv("RESEND_FROM_EMAIL"))
+	if fromEmail == "" {
+		fromEmail = "onboarding@resend.dev"
+	}
+
 	return sendResendEmail(resendRequest{
-		From:    "onboarding@resend.dev", // Use Resend's default sender initially
+		From:    fromEmail,
 		To:      to,
 		Subject: "Verify your email - Roamify",
 		HTML:    htmlBody,
@@ -73,8 +78,13 @@ func SendPasswordResetCodeResend(to string, fullName string, code string) error 
 		code,
 	)
 
+	fromEmail := strings.TrimSpace(os.Getenv("RESEND_FROM_EMAIL"))
+	if fromEmail == "" {
+		fromEmail = "onboarding@resend.dev"
+	}
+
 	return sendResendEmail(resendRequest{
-		From:    "onboarding@resend.dev",
+		From:    fromEmail,
 		To:      to,
 		Subject: "Reset your Roamify password",
 		HTML:    htmlBody,
