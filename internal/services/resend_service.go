@@ -15,7 +15,7 @@ const resendAPIURL = "https://api.resend.com/emails"
 
 type resendRequest struct {
 	From    string `json:"from"`
-	To      string `json:"to"`
+	To      []string `json:"to"`
 	Subject string `json:"subject"`
 	HTML    string `json:"html"`
 	Text    string `json:"text"`
@@ -25,7 +25,11 @@ type resendResponse struct {
 	ID    string `json:"id"`
 	From  string `json:"from"`
 	To    string `json:"to"`
-	Error string `json:"error,omitempty"`
+}
+
+type resendErrorResponse struct {
+	Name    string `json:"name"`
+	Message string `json:"message"`
 }
 
 func SendVerificationEmailResend(to string, token string) error {
@@ -53,7 +57,7 @@ func SendVerificationEmailResend(to string, token string) error {
 
 	return sendResendEmail(resendRequest{
 		From:    fromEmail,
-		To:      to,
+		To:      []string{to},
 		Subject: "Verify your email - Roamify",
 		HTML:    htmlBody,
 		Text:    textBody,
@@ -85,7 +89,7 @@ func SendPasswordResetCodeResend(to string, fullName string, code string) error 
 
 	return sendResendEmail(resendRequest{
 		From:    fromEmail,
-		To:      to,
+		To:      []string{to},
 		Subject: "Reset your Roamify password",
 		HTML:    htmlBody,
 		Text:    textBody,
@@ -103,7 +107,7 @@ func sendResendEmail(req resendRequest) error {
 		return fmt.Errorf("failed to marshal resend request: %w", err)
 	}
 
-	log.Printf("[email] sending via Resend to=%s subject=%q", req.To, req.Subject)
+	log.Printf("[email] sending via Resend to=%s subject=%q", strings.Join(req.To, ","), req.Subject)
 
 	httpReq, err := http.NewRequest("POST", resendAPIURL, bytes.NewBuffer(payload))
 	if err != nil {
@@ -125,19 +129,24 @@ func sendResendEmail(req resendRequest) error {
 		return fmt.Errorf("failed to read resend response: %w", err)
 	}
 
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		var resendErr resendErrorResponse
+		if err := json.Unmarshal(body, &resendErr); err == nil {
+			if strings.TrimSpace(resendErr.Message) != "" {
+				return fmt.Errorf("resend api error (status %d): %s", resp.StatusCode, resendErr.Message)
+			}
+			if strings.TrimSpace(resendErr.Name) != "" {
+				return fmt.Errorf("resend api error (status %d): %s", resp.StatusCode, resendErr.Name)
+			}
+		}
+		return fmt.Errorf("resend api error (status %d): %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+
 	var resendResp resendResponse
 	if err := json.Unmarshal(body, &resendResp); err != nil {
 		return fmt.Errorf("failed to parse resend response: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("resend api error: %s", resendResp.Error)
-	}
-
-	if resendResp.Error != "" {
-		return fmt.Errorf("resend email failed: %s", resendResp.Error)
-	}
-
-	log.Printf("[email] resend email sent successfully to=%s id=%s", req.To, resendResp.ID)
+	log.Printf("[email] resend email sent successfully to=%s id=%s", strings.Join(req.To, ","), resendResp.ID)
 	return nil
 }
