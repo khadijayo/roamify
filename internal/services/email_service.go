@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/smtp"
 	"net/url"
@@ -73,16 +74,17 @@ func sendSMTP(msg emailMessage) error {
 	}
 
 	addr := net.JoinHostPort(cfg.host, cfg.port)
+	log.Printf("[email] sending smtp message host=%s port=%s from=%s to=%s subject=%q", cfg.host, cfg.port, cfg.fromEmail, strings.Join(msg.To, ","), msg.Subject)
 	conn, err := dialSMTP(addr, cfg.host, cfg.port)
 	if err != nil {
-		return err
+		return fmt.Errorf("smtp dial failed host=%s port=%s: %w", cfg.host, cfg.port, err)
 	}
 	defer conn.Close()
 	_ = conn.SetDeadline(time.Now().Add(15 * time.Second))
 
 	client, err := smtp.NewClient(conn, cfg.host)
 	if err != nil {
-		return err
+		return fmt.Errorf("smtp client failed: %w", err)
 	}
 	defer client.Close()
 
@@ -90,7 +92,7 @@ func sendSMTP(msg emailMessage) error {
 		if ok, _ := client.Extension("STARTTLS"); ok {
 			tlsConfig := &tls.Config{ServerName: cfg.host, MinVersion: tls.VersionTLS12}
 			if err := client.StartTLS(tlsConfig); err != nil {
-				return err
+				return fmt.Errorf("smtp starttls failed: %w", err)
 			}
 		}
 	}
@@ -98,32 +100,37 @@ func sendSMTP(msg emailMessage) error {
 	if cfg.username != "" && cfg.password != "" {
 		auth := smtp.PlainAuth("", cfg.username, cfg.password, cfg.host)
 		if err := client.Auth(auth); err != nil {
-			return err
+			return fmt.Errorf("smtp auth failed: %w", err)
 		}
 	}
 
 	if err := client.Mail(cfg.fromEmail); err != nil {
-		return err
+		return fmt.Errorf("smtp sender rejected: %w", err)
 	}
 	for _, recipient := range msg.To {
 		if err := client.Rcpt(recipient); err != nil {
-			return err
+			return fmt.Errorf("smtp recipient rejected %s: %w", recipient, err)
 		}
 	}
 
 	writer, err := client.Data()
 	if err != nil {
-		return err
+		return fmt.Errorf("smtp data command failed: %w", err)
 	}
 	if _, err := writer.Write([]byte(buildMIMEMessage(cfg, msg))); err != nil {
 		_ = writer.Close()
-		return err
+		return fmt.Errorf("smtp message write failed: %w", err)
 	}
 	if err := writer.Close(); err != nil {
-		return err
+		return fmt.Errorf("smtp message close failed: %w", err)
 	}
 
-	return client.Quit()
+	if err := client.Quit(); err != nil {
+		return fmt.Errorf("smtp quit failed: %w", err)
+	}
+
+	log.Printf("[email] smtp message sent to=%s subject=%q", strings.Join(msg.To, ","), msg.Subject)
+	return nil
 }
 
 type smtpConfig struct {
@@ -136,12 +143,20 @@ type smtpConfig struct {
 }
 
 func smtpConfigFromEnv() smtpConfig {
+	fromEmail := strings.TrimSpace(os.Getenv("SMTP_FROM_EMAIL"))
+	if fromEmail == "" {
+		fromEmail = strings.TrimSpace(os.Getenv("SMTP_FROM"))
+	}
+	if fromEmail == "" {
+		fromEmail = strings.TrimSpace(os.Getenv("SMTP_USERNAME"))
+	}
+
 	return smtpConfig{
 		host:      strings.TrimSpace(os.Getenv("SMTP_HOST")),
 		port:      envOrDefault("SMTP_PORT", "587"),
 		username:  strings.TrimSpace(os.Getenv("SMTP_USERNAME")),
 		password:  strings.TrimSpace(os.Getenv("SMTP_PASSWORD")),
-		fromEmail: strings.TrimSpace(os.Getenv("SMTP_FROM_EMAIL")),
+		fromEmail: fromEmail,
 		fromName:  envOrDefault("SMTP_FROM_NAME", "Roamify"),
 	}
 }
@@ -155,6 +170,9 @@ func (c smtpConfig) validate() error {
 	}
 	if c.fromEmail == "" {
 		return errors.New("SMTP_FROM_EMAIL is required")
+	}
+	if (c.username == "") != (c.password == "") {
+		return errors.New("SMTP_USERNAME and SMTP_PASSWORD must both be set")
 	}
 	return nil
 }

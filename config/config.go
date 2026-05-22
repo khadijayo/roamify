@@ -71,7 +71,7 @@ func Load() {
 		SMTPPort:      getEnv("SMTP_PORT", "587"),
 		SMTPUsername:  getEnv("SMTP_USERNAME", ""),
 		SMTPPassword:  getEnv("SMTP_PASSWORD", ""),
-		SMTPFromEmail: getEnv("SMTP_FROM_EMAIL", ""),
+		SMTPFromEmail: getEnv("SMTP_FROM_EMAIL", getEnv("SMTP_FROM", "")),
 		SMTPFromName:  getEnv("SMTP_FROM_NAME", "Roamify"),
 	}
 
