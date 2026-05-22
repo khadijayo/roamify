@@ -21,12 +21,12 @@ type emailMessage struct {
 }
 
 func SendVerificationEmail(to string, token string) error {
-	baseURL := strings.TrimRight(strings.TrimSpace(os.Getenv("APP_BASE_URL")), "/")
-	if baseURL == "" {
-		return errors.New("APP_BASE_URL is required")
+	frontendURL := strings.TrimRight(strings.TrimSpace(os.Getenv("FRONTEND_URL")), "/")
+	if frontendURL == "" {
+		return errors.New("FRONTEND_URL is required")
 	}
 
-	verifyURL := fmt.Sprintf("%s/api/v1/auth/verify?token=%s", baseURL, url.QueryEscape(token))
+	verifyURL := fmt.Sprintf("%s/login?token=%s", frontendURL, url.QueryEscape(token))
 	return sendSMTP(emailMessage{
 		To:      []string{to},
 		Subject: "Verify your email",
