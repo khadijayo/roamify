@@ -222,14 +222,21 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (*AuthResponse, 
 		return nil, ErrInvalidCredentials
 	}
 
-	token, err := s.issueToken(user)
-	if err != nil {
-		return nil, err
-	}
-
 	now := time.Now().UTC()
 	user.LastLoginAt = &now
 	if err := s.repo.UpdateUser(ctx, user); err != nil {
+		return nil, err
+	}
+
+	// Re-fetch from DB to guarantee the freshest role is in the token.
+	// Prevents stale JWT role when role was updated externally (e.g. via pgAdmin).
+	if fresh, fetchErr := s.repo.FindByID(ctx, user.ID); fetchErr == nil {
+		log.Printf("[auth] login user_id=%s db_role=%s", fresh.ID, fresh.Role)
+		user = fresh
+	}
+
+	token, err := s.issueToken(user)
+	if err != nil {
 		return nil, err
 	}
 
@@ -253,6 +260,9 @@ func (s *service) SocialAuth(ctx context.Context, req *SocialAuthRequest) (*Auth
 		if user.IsBanned {
 			return nil, ErrAccountBanned
 		}
+		// Preserve the DB role — do NOT overwrite it during social login.
+		// Only update profile/auth fields, never touch role.
+		dbRole := user.Role
 		provider := req.Provider
 		user.AuthProvider = &provider
 		user.ProviderID = &req.ProviderUserID
@@ -261,8 +271,13 @@ func (s *service) SocialAuth(ctx context.Context, req *SocialAuthRequest) (*Auth
 		user.IsVerified = true
 		user.VerificationToken = nil
 		user.TokenExpiresAt = nil
+		user.Role = dbRole // explicitly restore role to prevent accidental override
 		if err := s.repo.UpdateUser(ctx, user); err != nil {
 			return nil, err
+		}
+		// Re-fetch fresh from DB so issueToken uses the latest role
+		if fresh, fetchErr := s.repo.FindByID(ctx, user.ID); fetchErr == nil {
+			user = fresh
 		}
 	} else {
 		provider := req.Provider
