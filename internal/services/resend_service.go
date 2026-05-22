@@ -139,7 +139,11 @@ func sendResendEmail(req resendRequest) error {
 				return fmt.Errorf("resend api error (status %d): %s", resp.StatusCode, resendErr.Name)
 			}
 		}
-		return fmt.Errorf("resend api error (status %d): %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		bodyText := strings.TrimSpace(string(body))
+		if bodyText == "" {
+			bodyText = resp.Status
+		}
+		return fmt.Errorf("resend api error (status %d): %s (content-type=%s)", resp.StatusCode, bodyText, resp.Header.Get("Content-Type"))
 	}
 
 	var resendResp resendResponse
