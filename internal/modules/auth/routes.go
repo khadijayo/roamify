@@ -5,6 +5,7 @@ import "github.com/gin-gonic/gin"
 func RegisterRoutes(r *gin.RouterGroup, h *Handler) {
 	authRoutes := r.Group("/auth")
 	{
+		// ── Existing routes (unchanged) ────────────────────────────────────
 		authRoutes.POST("/register", h.Register)
 		authRoutes.POST("/login", h.Login)
 		authRoutes.POST("/social", h.SocialAuth)
@@ -14,5 +15,11 @@ func RegisterRoutes(r *gin.RouterGroup, h *Handler) {
 		authRoutes.POST("/verify-reset-code", h.VerifyResetCode)
 		authRoutes.POST("/reset-password", h.ResetPassword)
 		authRoutes.POST("/resend-verification", h.ResendVerification)
+
+		// ── Google OAuth ───────────────────────────────────────────────────
+		// Step 1: frontend redirects user here to start Google login
+		authRoutes.GET("/google/login", h.GoogleLogin)
+		// Step 2: Google redirects back here with ?code=...
+		authRoutes.GET("/google/callback", h.GoogleCallback)
 	}
 }

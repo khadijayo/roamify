@@ -117,22 +117,23 @@ func resolveSwaggerDir() (string, error) {
 	return "", fmt.Errorf("docs/swagger directory not found in runtime paths")
 }
 
-// wireModules registers all modules
 func wireModules(api *gin.RouterGroup) {
 	db := config.DB
 	auth := middleware.RequireAuth(config.App.JWTSecret, db)
 
+	// ── Auth (updated: pass config.App so GoogleOAuth config is available) ───
 	authRepo := roamauth.NewRepository(db)
 	authSvc := roamauth.NewService(authRepo, config.App)
-	authHandler := roamauth.NewHandler(authSvc)
+	authHandler := roamauth.NewHandler(authSvc, config.App) // <-- config.App added
 	roamauth.RegisterRoutes(api, authHandler)
+
+	// ── All other modules below are UNCHANGED ─────────────────────────────────
 
 	userRepo := users.NewRepository(db)
 	userSvc := users.NewService(userRepo)
 	userHandler := users.NewHandler(userSvc)
 	users.RegisterRoutes(api, userHandler, auth)
 
-	// Notifications: settings + inbox
 	notifSettingsRepo := notifications.NewSettingsRepository(db)
 	notifSettingsSvc := notifications.NewSettingsService(notifSettingsRepo)
 	notifSettingsHandler := notifications.NewSettingsHandler(notifSettingsSvc)

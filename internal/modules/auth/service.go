@@ -6,10 +6,13 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"math/big"
+	"net/http"
 	"strings"
 	"time"
 
@@ -18,6 +21,7 @@ import (
 	"github.com/khadijayo/roamify/internal/services"
 	pkgjwt "github.com/khadijayo/roamify/pkg/jwt"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/oauth2"
 	"gorm.io/gorm"
 )
 
@@ -27,6 +31,8 @@ const (
 	resetCodeMaxAttempts        = 5
 	resetCodeRateLimit          = 1 * time.Minute
 	resendVerificationRateLimit = 1 * time.Minute
+
+	googleUserInfoURL = "https://www.googleapis.com/oauth2/v2/userinfo"
 )
 
 var (
@@ -42,7 +48,14 @@ var (
 	ErrResetCodeRecentlySent         = errors.New("please wait before requesting another reset code")
 	ErrVerificationResendRateLimited = errors.New("please wait before resending verification email")
 	ErrVerificationResendFailed      = errors.New("failed to resend verification email")
+
+	// Google OAuth errors
+	ErrGoogleTokenExchange = errors.New("failed to exchange Google authorization code")
+	ErrGoogleUserInfo      = errors.New("failed to fetch user info from Google")
+	ErrGoogleMissingEmail  = errors.New("Google account did not return an email address")
 )
+
+// ── Request / response types ─────────────────────────────────────────────────
 
 type RegisterRequest struct {
 	FullName string `json:"full_name" binding:"required"`
@@ -102,6 +115,19 @@ type ActionResponse struct {
 	Message string `json:"message,omitempty"`
 }
 
+// googleUserInfo is the shape returned by Google's /oauth2/v2/userinfo endpoint.
+type googleUserInfo struct {
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	VerifiedEmail bool   `json:"verified_email"`
+	Name          string `json:"name"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Picture       string `json:"picture"`
+}
+
+// ── Service interface ─────────────────────────────────────────────────────────
+
 type Service interface {
 	Register(ctx context.Context, req *RegisterRequest) (*RegisterResponse, error)
 	Login(ctx context.Context, req *LoginRequest) (*AuthResponse, error)
@@ -111,12 +137,18 @@ type Service interface {
 	VerifyResetCode(ctx context.Context, req *VerifyResetCodeRequest) (*ActionResponse, error)
 	ResetPassword(ctx context.Context, req *ResetPasswordRequest) (*ActionResponse, error)
 	ResendVerification(ctx context.Context, req *ResendVerificationRequest) (*ActionResponse, error)
+
+	// Google OAuth
+	GoogleCallback(ctx context.Context, code string, oauthCfg *oauth2.Config) (*AuthResponse, error)
 }
+
+// ── Service implementation ────────────────────────────────────────────────────
 
 type service struct {
 	repo           Repository
 	jwtSecret      string
 	jwtExpiryHours int
+	httpClient     *http.Client
 }
 
 func NewService(repo Repository, cfg *config.Config) Service {
@@ -124,8 +156,11 @@ func NewService(repo Repository, cfg *config.Config) Service {
 		repo:           repo,
 		jwtSecret:      cfg.JWTSecret,
 		jwtExpiryHours: cfg.JWTExpiryHours,
+		httpClient:     &http.Client{Timeout: 10 * time.Second},
 	}
 }
+
+// ── Existing service methods (unchanged) ─────────────────────────────────────
 
 func (s *service) Register(ctx context.Context, req *RegisterRequest) (*RegisterResponse, error) {
 	email := normalizeEmail(req.Email)
@@ -229,7 +264,6 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (*AuthResponse, 
 	}
 
 	// Re-fetch from DB to guarantee the freshest role is in the token.
-	// Prevents stale JWT role when role was updated externally (e.g. via pgAdmin).
 	if fresh, fetchErr := s.repo.FindByID(ctx, user.ID); fetchErr == nil {
 		log.Printf("[auth] login user_id=%s db_role=%s", fresh.ID, fresh.Role)
 		user = fresh
@@ -260,8 +294,6 @@ func (s *service) SocialAuth(ctx context.Context, req *SocialAuthRequest) (*Auth
 		if user.IsBanned {
 			return nil, ErrAccountBanned
 		}
-		// Preserve the DB role — do NOT overwrite it during social login.
-		// Only update profile/auth fields, never touch role.
 		dbRole := user.Role
 		provider := req.Provider
 		user.AuthProvider = &provider
@@ -271,11 +303,10 @@ func (s *service) SocialAuth(ctx context.Context, req *SocialAuthRequest) (*Auth
 		user.IsVerified = true
 		user.VerificationToken = nil
 		user.TokenExpiresAt = nil
-		user.Role = dbRole // explicitly restore role to prevent accidental override
+		user.Role = dbRole
 		if err := s.repo.UpdateUser(ctx, user); err != nil {
 			return nil, err
 		}
-		// Re-fetch fresh from DB so issueToken uses the latest role
 		if fresh, fetchErr := s.repo.FindByID(ctx, user.ID); fetchErr == nil {
 			user = fresh
 		}
@@ -514,10 +545,86 @@ func (s *service) VerifyEmail(ctx context.Context, token string) (*VerifyEmailRe
 		return nil, err
 	}
 
-	return &VerifyEmailResponse{
-		IsVerified: true,
-	}, nil
+	return &VerifyEmailResponse{IsVerified: true}, nil
 }
+
+// ── Google OAuth ──────────────────────────────────────────────────────────────
+
+// GoogleCallback exchanges the code for a token, fetches user info from Google,
+// then finds-or-creates the user and returns a signed JWT — exactly like SocialAuth.
+func (s *service) GoogleCallback(ctx context.Context, code string, oauthCfg *oauth2.Config) (*AuthResponse, error) {
+	// Step 1: Exchange authorization code for Google access token
+	googleToken, err := oauthCfg.Exchange(ctx, code)
+	if err != nil {
+		log.Printf("[auth/google] token exchange failed: %v", err)
+		return nil, ErrGoogleTokenExchange
+	}
+
+	// Step 2: Use the access token to fetch the user's Google profile
+	info, err := s.fetchGoogleUserInfo(ctx, googleToken.AccessToken)
+	if err != nil {
+		log.Printf("[auth/google] userinfo fetch failed: %v", err)
+		return nil, ErrGoogleUserInfo
+	}
+
+	// Step 3: Validate that we got an email back
+	if info.Email == "" {
+		return nil, ErrGoogleMissingEmail
+	}
+
+	email := normalizeEmail(info.Email)
+
+	// Step 4: Resolve full name – fall back gracefully if Google omits fields
+	fullName := strings.TrimSpace(info.Name)
+	if fullName == "" {
+		fullName = strings.TrimSpace(info.GivenName + " " + info.FamilyName)
+	}
+	if fullName == "" {
+		fullName = email // last resort
+	}
+
+	// Step 5: Build a SocialAuthRequest and reuse the existing SocialAuth logic.
+	// This keeps the upsert/create/ban logic in one place.
+	avatarURL := info.Picture
+	req := &SocialAuthRequest{
+		Provider:       "google",
+		ProviderUserID: info.ID,
+		Email:          &email,
+		FullName:       fullName,
+		AvatarURL:      &avatarURL,
+	}
+
+	return s.SocialAuth(ctx, req)
+}
+
+// fetchGoogleUserInfo calls Google's userinfo endpoint and returns the profile.
+func (s *service) fetchGoogleUserInfo(ctx context.Context, accessToken string) (*googleUserInfo, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, googleUserInfoURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("google userinfo returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var info googleUserInfo
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		return nil, fmt.Errorf("decode google userinfo: %w", err)
+	}
+
+	return &info, nil
+}
+
+// ── Internal helpers ──────────────────────────────────────────────────────────
 
 func (s *service) sendVerificationAsync(email, rawToken string) {
 	go func() {
@@ -550,6 +657,13 @@ func (s *service) issueToken(user *users.User) (string, error) {
 		role = string(users.RoleUser)
 	}
 	return pkgjwt.Generate(user.ID, email, role, s.jwtSecret, s.jwtExpiryHours)
+}
+
+// generateStateToken creates a random CSRF state token for OAuth.
+func generateStateToken() string {
+	buf := make([]byte, 16)
+	_, _ = rand.Read(buf)
+	return base64.RawURLEncoding.EncodeToString(buf)
 }
 
 func normalizeEmail(email string) string {

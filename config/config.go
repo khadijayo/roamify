@@ -32,6 +32,12 @@ type Config struct {
 	SMTPPassword  string
 	SMTPFromEmail string
 	SMTPFromName  string
+
+	// Google OAuth
+	GoogleClientID     string
+	GoogleClientSecret string
+	GoogleRedirectURL  string
+	FrontendURL        string
 }
 
 var App *Config
@@ -73,11 +79,21 @@ func Load() {
 		SMTPPassword:  getEnv("SMTP_PASSWORD", ""),
 		SMTPFromEmail: getEnv("SMTP_FROM_EMAIL", getEnv("SMTP_FROM", "")),
 		SMTPFromName:  getEnv("SMTP_FROM_NAME", "Roamify"),
+
+		// Google OAuth
+		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
+		GoogleRedirectURL:  getEnv("GOOGLE_REDIRECT_URL", "http://localhost:8080/api/v1/auth/google/callback"),
+		FrontendURL:        getEnv("FRONTEND_URL", "https://roamify-zeta.vercel.app"),
 	}
 
 	// 🔥 Fail fast in production if missing
 	if os.Getenv("RENDER") != "" && App.AppBaseURL == "http://localhost:8080" {
 		log.Fatal("❌ APP_BASE_URL must be set in Render environment variables")
+	}
+
+	if os.Getenv("RENDER") != "" && App.GoogleClientID == "" {
+		log.Println("⚠️  GOOGLE_CLIENT_ID not set – Google OAuth will be disabled")
 	}
 
 	// ✅ Debug (remove later if you want)

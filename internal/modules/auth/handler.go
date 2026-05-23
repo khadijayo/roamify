@@ -5,16 +5,26 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/khadijayo/roamify/config"
 	"github.com/khadijayo/roamify/pkg/response"
+	"golang.org/x/oauth2"
 )
 
 type Handler struct {
-	svc Service
+	svc         Service
+	googleOAuth *oauth2.Config
+	frontendURL string
 }
 
-func NewHandler(svc Service) *Handler {
-	return &Handler{svc: svc}
+func NewHandler(svc Service, cfg *config.Config) *Handler {
+	return &Handler{
+		svc:         svc,
+		googleOAuth: NewGoogleOAuthConfig(cfg),
+		frontendURL: cfg.FrontendURL,
+	}
 }
+
+// ── Existing handlers (unchanged) ────────────────────────────────────────────
 
 func (h *Handler) Register(c *gin.Context) {
 	var req RegisterRequest
@@ -211,4 +221,82 @@ func (h *Handler) ResendVerification(c *gin.Context) {
 	}
 
 	response.OK(c, "verification email resent", res)
+}
+
+// ── Google OAuth handlers ─────────────────────────────────────────────────────
+
+// GoogleLogin redirects the user to Google's consent screen.
+// GET /api/v1/auth/google/login
+func (h *Handler) GoogleLogin(c *gin.Context) {
+	if h.googleOAuth.ClientID == "" {
+		response.InternalError(c, "Google OAuth is not configured on this server")
+		return
+	}
+
+	// Use a random state token to prevent CSRF.
+	// In production you should store this in a short-lived cookie or Redis.
+	state := generateStateToken()
+	c.SetCookie("oauth_state", state, 300, "/", "", true, true)
+
+	url := h.googleOAuth.AuthCodeURL(state, oauth2.AccessTypeOffline)
+	c.Redirect(http.StatusTemporaryRedirect, url)
+}
+
+// GoogleCallback handles the redirect back from Google after user consent.
+// GET /api/v1/auth/google/callback
+func (h *Handler) GoogleCallback(c *gin.Context) {
+	// ── 1. Validate state (CSRF protection) ──────────────────────────────────
+	cookieState, err := c.Cookie("oauth_state")
+	queryState := c.Query("state")
+
+	// If cookie is missing (e.g. browser blocked it), fall through gracefully.
+	// If both are present, they must match.
+	if err == nil && cookieState != "" && cookieState != queryState {
+		h.redirectError(c, "invalid_state", "OAuth state mismatch – possible CSRF attempt")
+		return
+	}
+
+	// Clear the state cookie immediately
+	c.SetCookie("oauth_state", "", -1, "/", "", true, true)
+
+	// ── 2. Check for error from Google ───────────────────────────────────────
+	if errParam := c.Query("error"); errParam != "" {
+		h.redirectError(c, errParam, c.Query("error_description"))
+		return
+	}
+
+	// ── 3. Get the authorization code ────────────────────────────────────────
+	code := c.Query("code")
+	if code == "" {
+		h.redirectError(c, "missing_code", "No authorization code received from Google")
+		return
+	}
+
+	// ── 4. Exchange code for Google tokens ───────────────────────────────────
+	res, err := h.svc.GoogleCallback(c.Request.Context(), code, h.googleOAuth)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrGoogleTokenExchange):
+			h.redirectError(c, "token_exchange_failed", "Failed to exchange code with Google")
+		case errors.Is(err, ErrGoogleUserInfo):
+			h.redirectError(c, "userinfo_failed", "Failed to fetch user info from Google")
+		case errors.Is(err, ErrGoogleMissingEmail):
+			h.redirectError(c, "missing_email", "Google account has no email address")
+		case errors.Is(err, ErrAccountBanned):
+			h.redirectError(c, "account_banned", "Your account has been banned")
+		default:
+			h.redirectError(c, "server_error", "An unexpected error occurred")
+		}
+		return
+	}
+
+	// ── 5. Redirect to frontend with JWT ─────────────────────────────────────
+	redirectURL := h.frontendURL + "/oauth-success?token=" + res.Token
+	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+}
+
+// redirectError sends the user to the frontend with a readable error.
+func (h *Handler) redirectError(c *gin.Context, code, message string) {
+	redirectURL := h.frontendURL + "/oauth-error?error=" + code + "&message=" + message
+	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 }
