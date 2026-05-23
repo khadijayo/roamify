@@ -21,12 +21,18 @@ type emailMessage struct {
 }
 
 func SendVerificationEmail(to string, token string) error {
-	frontendURL := strings.TrimRight(strings.TrimSpace(os.Getenv("FRONTEND_URL")), "/")
-	if frontendURL == "" {
-		return errors.New("FRONTEND_URL is required")
+	// Prefer Resend if API key is configured
+	if apiKey := os.Getenv("RESEND_API_KEY"); strings.TrimSpace(apiKey) != "" {
+		return SendVerificationEmailResend(to, token)
 	}
 
-	verifyURL := fmt.Sprintf("%s/login?token=%s", frontendURL, url.QueryEscape(token))
+	// Fall back to SMTP
+	baseURL := strings.TrimRight(strings.TrimSpace(os.Getenv("APP_BASE_URL")), "/")
+	if baseURL == "" {
+		return errors.New("APP_BASE_URL is required")
+	}
+
+	verifyURL := fmt.Sprintf("%s/api/v1/auth/verify?token=%s", baseURL, url.QueryEscape(token))
 	return sendSMTP(emailMessage{
 		To:      []string{to},
 		Subject: "Verify your email",
@@ -42,6 +48,12 @@ func SendVerificationEmail(to string, token string) error {
 }
 
 func SendPasswordResetCode(to string, fullName string, code string) error {
+	// Prefer Resend if API key is configured
+	if apiKey := os.Getenv("RESEND_API_KEY"); strings.TrimSpace(apiKey) != "" {
+		return SendPasswordResetCodeResend(to, fullName, code)
+	}
+
+	// Fall back to SMTP
 	name := strings.TrimSpace(fullName)
 	if name == "" {
 		name = "traveler"
