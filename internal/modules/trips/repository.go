@@ -10,6 +10,7 @@ type Repository interface {
 	FindTripByID(id uuid.UUID) (*Trip, error)
 	FindTripsByOwner(ownerID uuid.UUID) ([]Trip, error)
 	FindTripsByMember(userID uuid.UUID) ([]Trip, error)
+	FindAllTrips() ([]Trip, error)
 	UpdateTrip(trip *Trip) error
 	DeleteTrip(id uuid.UUID) error
 
@@ -71,6 +72,12 @@ func (r *repository) FindTripsByMember(userID uuid.UUID) ([]Trip, error) {
 		Where("trip_members.user_id = ? AND trip_members.join_status = ?", userID, JoinStatusJoined).
 		Order("trips.created_at DESC").
 		Find(&trips).Error
+	return trips, err
+}
+
+func (r *repository) FindAllTrips() ([]Trip, error) {
+	var trips []Trip
+	err := r.db.Order("created_at DESC").Find(&trips).Error
 	return trips, err
 }
 

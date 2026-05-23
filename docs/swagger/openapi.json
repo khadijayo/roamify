@@ -530,1499 +530,1547 @@
       }
     },
     "/api/v1/notifications/settings": {
-    "get": {
-      "summary": "Get notification settings",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "patch": {
-      "summary": "Update notification settings",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/UpdateNotificationSettingsRequest"
-            }
+      "get": {
+        "summary": "Get notification settings",
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       },
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/trips/": {
-    "post": {
-      "summary": "Create trip",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/CreateTripRequest"
+      "patch": {
+        "summary": "Update notification settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationSettingsRequest"
+              }
             }
           }
-        }
-      },
-      "responses": {
-        "201": {
-          "description": "Created"
-        }
-      }
-    },
-    "get": {
-      "summary": "List my trips",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/trips/{tripId}": {
-    "get": {
-      "summary": "Get trip",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "patch": {
-      "summary": "Update trip",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
-        }
-      ],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/UpdateTripRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "delete": {
-      "summary": "Delete trip",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/trips/{tripId}/members": {
-    "post": {
-      "summary": "Invite member",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
-        }
-      ],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/InviteMemberRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "201": {
-          "description": "Created"
-        }
-      }
-    },
-    "get": {
-      "summary": "Get members",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/trips/{tripId}/members/status": {
-    "patch": {
-      "summary": "Update member status",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
-        }
-      ],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/UpdateMemberStatusRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/trips/{tripId}/members/{userId}": {
-    "delete": {
-      "summary": "Remove member",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
         },
-        {
-          "$ref": "#/components/parameters/userId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
         }
       }
-    }
-  },
-  "/api/v1/trips/{tripId}/itinerary": {
-    "post": {
-      "summary": "Create itinerary item",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
+    },
+    "/api/v1/trips/": {
+      "post": {
+        "summary": "Create trip",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTripRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
         }
-      ],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/CreateItineraryItemRequest"
+      },
+      "get": {
+        "summary": "List my trips",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{tripId}": {
+      "get": {
+        "summary": "Get trip",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update trip",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTripRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete trip",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{tripId}/members": {
+      "post": {
+        "summary": "Invite member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteMemberRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get members",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{tripId}/members/status": {
+      "patch": {
+        "summary": "Update member status",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMemberStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{tripId}/members/{userId}": {
+      "delete": {
+        "summary": "Remove member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          },
+          {
+            "$ref": "#/components/parameters/userId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{tripId}/itinerary": {
+      "post": {
+        "summary": "Create itinerary item",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateItineraryItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get itinerary",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{tripId}/itinerary/{itemId}": {
+      "patch": {
+        "summary": "Update itinerary item",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          },
+          {
+            "$ref": "#/components/parameters/itemId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateItineraryItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete itinerary item",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          },
+          {
+            "$ref": "#/components/parameters/itemId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{tripId}/expenses": {
+      "post": {
+        "summary": "Create expense",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExpenseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get expenses",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{tripId}/expenses/{expenseId}": {
+      "patch": {
+        "summary": "Update expense",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          },
+          {
+            "$ref": "#/components/parameters/expenseId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateExpenseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete expense",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tripId"
+          },
+          {
+            "$ref": "#/components/parameters/expenseId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/posts/": {
+      "post": {
+        "summary": "Create post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePostRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePostMultipartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostMutationResponse"
+                }
+              }
             }
           }
         }
       },
-      "responses": {
-        "201": {
-          "description": "Created"
+      "get": {
+        "summary": "Get feed",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "$ref": "#/components/parameters/pageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedPostResponse"
+                }
+              }
+            }
+          }
         }
       }
     },
-    "get": {
-      "summary": "Get itinerary",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/trips/{tripId}/itinerary/{itemId}": {
-    "patch": {
-      "summary": "Update itinerary item",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
-        },
-        {
-          "$ref": "#/components/parameters/itemId"
-        }
-      ],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/UpdateItineraryItemRequest"
+    "/api/v1/posts/{postId}": {
+      "get": {
+        "summary": "Get post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostMutationResponse"
+                }
+              }
             }
           }
         }
       },
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "delete": {
-      "summary": "Delete itinerary item",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
+      "patch": {
+        "summary": "Update post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePostRequest"
+              }
+            }
+          }
         },
-        {
-          "$ref": "#/components/parameters/itemId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/trips/{tripId}/expenses": {
-    "post": {
-      "summary": "Create expense",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
-        }
-      ],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/CreateExpenseRequest"
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostMutationResponse"
+                }
+              }
             }
           }
         }
       },
-      "responses": {
-        "201": {
-          "description": "Created"
+      "delete": {
+        "summary": "Delete post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
         }
       }
     },
-    "get": {
-      "summary": "Get expenses",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/trips/{tripId}/expenses/{expenseId}": {
-    "patch": {
-      "summary": "Update expense",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
-        },
-        {
-          "$ref": "#/components/parameters/expenseId"
-        }
-      ],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/UpdateExpenseRequest"
+    "/api/v1/posts/{postId}/comments": {
+      "get": {
+        "summary": "Get post comments",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostCommentsListResponse"
+                }
+              }
             }
           }
         }
       },
-      "responses": {
-        "200": {
-          "description": "OK"
+      "post": {
+        "summary": "Add post comment",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostCommentMutationResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete post comment",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          },
+          {
+            "$ref": "#/components/parameters/commentIdQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
         }
       }
     },
-    "delete": {
-      "summary": "Delete expense",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/tripId"
-        },
-        {
-          "$ref": "#/components/parameters/expenseId"
+    "/api/v1/posts/{postId}/like": {
+      "post": {
+        "summary": "Like post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
         }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
+      },
+      "delete": {
+        "summary": "Unlike post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
         }
       }
-    }
-  },
-  "/api/v1/posts/": {
-    "post": {
-      "summary": "Create post",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
+    },
+    "/api/v1/reports/": {
+      "post": {
+        "summary": "Create report",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportMutationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "summary": "List users",
+        "description": "Admin-only endpoint. Requires a valid bearer JWT whose user role is admin.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/q"
+          },
+          {
+            "name": "status",
+            "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/CreatePostRequest"
+              "type": "string",
+              "enum": [
+                "active",
+                "banned"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}": {
+      "get": {
+        "summary": "Get user details",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete user",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}/role": {
+      "patch": {
+        "summary": "Update user role",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRoleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}/activity": {
+      "get": {
+        "summary": "Get user activity",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}/ban": {
+      "put": {
+        "summary": "Ban user",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}/unban": {
+      "put": {
+        "summary": "Unban user",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/posts": {
+      "get": {
+        "summary": "List posts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/posts/{id}": {
+      "get": {
+        "summary": "Get post details",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/posts/{id}/hide": {
+      "put": {
+        "summary": "Hide post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/posts/{id}/unhide": {
+      "put": {
+        "summary": "Unhide post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/comments": {
+      "get": {
+        "summary": "List comments",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/comments/{id}": {
+      "delete": {
+        "summary": "Delete comment",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/trips": {
+      "get": {
+        "summary": "List trips",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/trips/{id}": {
+      "delete": {
+        "summary": "Delete trip",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports": {
+      "get": {
+        "summary": "List reports",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/status"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/{id}/resolve": {
+      "put": {
+        "summary": "Resolve report",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/adminResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/stats": {
+      "get": {
+        "summary": "Get dashboard stats",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/wishlist/items": {
+      "post": {
+        "summary": "Create wishlist item",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "summary": "List wishlist items",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/wishlist/items/{itemId}": {
+      "patch": {
+        "summary": "Update wishlist item",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/itemId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete wishlist item",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/itemId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/wishlist/collections": {
+      "post": {
+        "summary": "Create collection",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCollectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "summary": "List collections",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/wishlist/collections/{collectionId}": {
+      "get": {
+        "summary": "Get collection",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update collection",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete collection",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/wishlist/collections/{collectionId}/items": {
+      "post": {
+        "summary": "Add item to collection",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddToCollectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/wishlist/collections/{collectionId}/items/{itemId}": {
+      "delete": {
+        "summary": "Remove item from collection",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
+          },
+          {
+            "$ref": "#/components/parameters/itemId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/": {
+      "get": {
+        "summary": "List challenges",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create challenge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChallengeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/leaderboard": {
+      "get": {
+        "summary": "Get leaderboard",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/accept": {
+      "post": {
+        "summary": "Accept challenge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptChallengeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/complete": {
+      "post": {
+        "summary": "Complete challenge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteChallengeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/my-progress": {
+      "get": {
+        "summary": "Get my challenge progress",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/trivia": {
+      "get": {
+        "summary": "List trivia questions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create trivia question",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTriviaQuestionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/trivia/answer": {
+      "post": {
+        "summary": "Answer trivia question",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerTriviaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/passport/vault": {
+      "put": {
+        "summary": "Upsert passport vault",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertVaultRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get passport vault",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete passport vault",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/passport/stamps": {
+      "post": {
+        "summary": "Add passport stamp",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddStampRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get passport stamps",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/passport/stamps/{stampId}": {
+      "delete": {
+        "summary": "Delete passport stamp",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/stampId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/home": {
+      "get": {
+        "summary": "Discovery home",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/vibe-search": {
+      "get": {
+        "summary": "Discovery vibe search",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/atlas": {
+      "get": {
+        "summary": "Discovery atlas list",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/aesthetic"
+          },
+          {
+            "$ref": "#/components/parameters/sortBy"
+          },
+          {
+            "$ref": "#/components/parameters/hiddenGemsOnly"
+          },
+          {
+            "$ref": "#/components/parameters/category"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/atlas/{locationId}": {
+      "get": {
+        "summary": "Discovery atlas detail",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/locationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/home": {
+      "get": {
+        "summary": "Alias for discovery home",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/vibe-search": {
+      "get": {
+        "summary": "Alias for discovery vibe search",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/atlas": {
+      "get": {
+        "summary": "Alias for discovery atlas list",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/aesthetic"
+          },
+          {
+            "$ref": "#/components/parameters/sortBy"
+          },
+          {
+            "$ref": "#/components/parameters/hiddenGemsOnly"
+          },
+          {
+            "$ref": "#/components/parameters/category"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/atlas/{locationId}": {
+      "get": {
+        "summary": "Alias for discovery atlas detail",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/locationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/search/global": {
+      "get": {
+        "summary": "Global search",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/search/results": {
+      "get": {
+        "summary": "Alias for global search",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/q"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/trips/all": {
+      "get": {
+        "summary": "List all trips",
+        "description": "Returns all trips across all users. Requires authentication.",
+        "tags": [
+          "Trips"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All trips fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "all trips fetched"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Trip"
+                      }
+                    }
+                  }
+                }
+              }
             }
           },
-          "multipart/form-data": {
-            "schema": {
-              "$ref": "#/components/schemas/CreatePostMultipartRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "201": {
-          "description": "Created",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PostMutationResponse"
-              }
-            }
-          }
-        }
-      }
-    },
-    "get": {
-      "summary": "Get feed",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/page"
-        },
-        {
-          "$ref": "#/components/parameters/pageSize"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PaginatedPostResponse"
-              }
-            }
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
           }
         }
       }
     }
-  },
-  "/api/v1/posts/{postId}": {
-    "get": {
-      "summary": "Get post",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/postId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PostMutationResponse"
-              }
-            }
-          }
-        }
-      }
-    },
-    "patch": {
-      "summary": "Update post",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/postId"
-        }
-      ],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/UpdatePostRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PostMutationResponse"
-              }
-            }
-          }
-        }
-      }
-    },
-    "delete": {
-      "summary": "Delete post",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/postId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/posts/{postId}/comments": {
-    "get": {
-      "summary": "Get post comments",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/postId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PostCommentsListResponse"
-              }
-            }
-          }
-        }
-      }
-    },
-    "post": {
-      "summary": "Add post comment",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/postId"
-        }
-      ],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/CreateCommentRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "201": {
-          "description": "Created",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PostCommentMutationResponse"
-              }
-            }
-          }
-        }
-      }
-    },
-    "delete": {
-      "summary": "Delete post comment",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/postId"
-        },
-        {
-          "$ref": "#/components/parameters/commentIdQuery"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/posts/{postId}/like": {
-    "post": {
-      "summary": "Like post",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/postId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "delete": {
-      "summary": "Unlike post",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/postId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/reports/": {
-    "post": {
-      "summary": "Create report",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/CreateReportRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "201": {
-          "description": "Created",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReportMutationResponse"
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "/api/v1/admin/users": {
-    "get": {
-      "summary": "List users",
-      "description": "Admin-only endpoint. Requires a valid bearer JWT whose user role is admin.",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/page"
-        },
-        {
-          "$ref": "#/components/parameters/limit"
-        },
-        {
-          "$ref": "#/components/parameters/q"
-        },
-        {
-          "name": "status",
-          "in": "query",
-          "schema": {
-            "type": "string",
-            "enum": [
-              "active",
-              "banned"
-            ]
-          }
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/users/{id}": {
-    "get": {
-      "summary": "Get user details",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/adminResourceId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "delete": {
-      "summary": "Delete user",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/adminResourceId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/users/{id}/role": {
-    "patch": {
-      "summary": "Update user role",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/adminResourceId"
-        }
-      ],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/UpdateUserRoleRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/users/{id}/activity": {
-    "get": {
-      "summary": "Get user activity",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/adminResourceId"
-        },
-        {
-          "$ref": "#/components/parameters/limit"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/users/{id}/ban": {
-    "put": {
-      "summary": "Ban user",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/adminResourceId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/users/{id}/unban": {
-    "put": {
-      "summary": "Unban user",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/adminResourceId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/posts": {
-    "get": {
-      "summary": "List posts",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/page"
-        },
-        {
-          "$ref": "#/components/parameters/limit"
-        },
-        {
-          "$ref": "#/components/parameters/q"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/posts/{id}": {
-    "get": {
-      "summary": "Get post details",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/adminResourceId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "delete": {
-      "summary": "Delete post",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/adminResourceId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/posts/{id}/hide": {
-    "put": {
-      "summary": "Hide post",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/adminResourceId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/posts/{id}/unhide": {
-    "put": {
-      "summary": "Unhide post",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/adminResourceId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/comments": {
-    "get": {
-      "summary": "List comments",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/page"
-        },
-        {
-          "$ref": "#/components/parameters/limit"
-        },
-        {
-          "$ref": "#/components/parameters/q"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/comments/{id}": {
-    "delete": {
-      "summary": "Delete comment",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/adminResourceId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/trips": {
-    "get": {
-      "summary": "List trips",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/page"
-        },
-        {
-          "$ref": "#/components/parameters/limit"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/trips/{id}": {
-    "delete": {
-      "summary": "Delete trip",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/adminResourceId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/reports": {
-    "get": {
-      "summary": "List reports",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/page"
-        },
-        {
-          "$ref": "#/components/parameters/limit"
-        },
-        {
-          "$ref": "#/components/parameters/status"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/reports/{id}/resolve": {
-    "put": {
-      "summary": "Resolve report",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/adminResourceId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/admin/stats": {
-    "get": {
-      "summary": "Get dashboard stats",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/wishlist/items": {
-    "post": {
-      "summary": "Create wishlist item",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/CreateItemRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "201": {
-          "description": "Created"
-        }
-      }
-    },
-    "get": {
-      "summary": "List wishlist items",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/wishlist/items/{itemId}": {
-    "patch": {
-      "summary": "Update wishlist item",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/itemId"
-        }
-      ],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/UpdateItemRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "delete": {
-      "summary": "Delete wishlist item",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/itemId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/wishlist/collections": {
-    "post": {
-      "summary": "Create collection",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/CreateCollectionRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "201": {
-          "description": "Created"
-        }
-      }
-    },
-    "get": {
-      "summary": "List collections",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/wishlist/collections/{collectionId}": {
-    "get": {
-      "summary": "Get collection",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/collectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "patch": {
-      "summary": "Update collection",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/collectionId"
-        }
-      ],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/UpdateCollectionRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "delete": {
-      "summary": "Delete collection",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/collectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/wishlist/collections/{collectionId}/items": {
-    "post": {
-      "summary": "Add item to collection",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/collectionId"
-        }
-      ],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/AddToCollectionRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/wishlist/collections/{collectionId}/items/{itemId}": {
-    "delete": {
-      "summary": "Remove item from collection",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/collectionId"
-        },
-        {
-          "$ref": "#/components/parameters/itemId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/challenges/": {
-    "get": {
-      "summary": "List challenges",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "post": {
-      "summary": "Create challenge",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/CreateChallengeRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "201": {
-          "description": "Created"
-        }
-      }
-    }
-  },
-  "/api/v1/challenges/leaderboard": {
-    "get": {
-      "summary": "Get leaderboard",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/limit"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/challenges/accept": {
-    "post": {
-      "summary": "Accept challenge",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/AcceptChallengeRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "201": {
-          "description": "Created"
-        }
-      }
-    }
-  },
-  "/api/v1/challenges/complete": {
-    "post": {
-      "summary": "Complete challenge",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/CompleteChallengeRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/challenges/my-progress": {
-    "get": {
-      "summary": "Get my challenge progress",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/challenges/trivia": {
-    "get": {
-      "summary": "List trivia questions",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/limit"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "post": {
-      "summary": "Create trivia question",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/CreateTriviaQuestionRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "201": {
-          "description": "Created"
-        }
-      }
-    }
-  },
-  "/api/v1/challenges/trivia/answer": {
-    "post": {
-      "summary": "Answer trivia question",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/AnswerTriviaRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/passport/vault": {
-    "put": {
-      "summary": "Upsert passport vault",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/UpsertVaultRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "get": {
-      "summary": "Get passport vault",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "delete": {
-      "summary": "Delete passport vault",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/passport/stamps": {
-    "post": {
-      "summary": "Add passport stamp",
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/AddStampRequest"
-            }
-          }
-        }
-      },
-      "responses": {
-        "201": {
-          "description": "Created"
-        }
-      }
-    },
-    "get": {
-      "summary": "Get passport stamps",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/passport/stamps/{stampId}": {
-    "delete": {
-      "summary": "Delete passport stamp",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/stampId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/discovery/home": {
-    "get": {
-      "summary": "Discovery home",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/discovery/vibe-search": {
-    "get": {
-      "summary": "Discovery vibe search",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/q"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/discovery/atlas": {
-    "get": {
-      "summary": "Discovery atlas list",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/aesthetic"
-        },
-        {
-          "$ref": "#/components/parameters/sortBy"
-        },
-        {
-          "$ref": "#/components/parameters/hiddenGemsOnly"
-        },
-        {
-          "$ref": "#/components/parameters/category"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/discovery/atlas/{locationId}": {
-    "get": {
-      "summary": "Discovery atlas detail",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/locationId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/home": {
-    "get": {
-      "summary": "Alias for discovery home",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/vibe-search": {
-    "get": {
-      "summary": "Alias for discovery vibe search",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/q"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/atlas": {
-    "get": {
-      "summary": "Alias for discovery atlas list",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/aesthetic"
-        },
-        {
-          "$ref": "#/components/parameters/sortBy"
-        },
-        {
-          "$ref": "#/components/parameters/hiddenGemsOnly"
-        },
-        {
-          "$ref": "#/components/parameters/category"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/atlas/{locationId}": {
-    "get": {
-      "summary": "Alias for discovery atlas detail",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/locationId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/search/global": {
-    "get": {
-      "summary": "Global search",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/q"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "/api/v1/search/results": {
-    "get": {
-      "summary": "Alias for global search",
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/q"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  }
   },
   "components": {
     "securitySchemes": {

@@ -61,6 +61,15 @@ func (h *Handler) GetMyTrips(c *gin.Context) {
 	response.OK(c, "trips fetched", trips)
 }
 
+func (h *Handler) GetAllTrips(c *gin.Context) {
+	trips, err := h.svc.GetAllTrips()
+	if err != nil {
+		response.InternalError(c, err.Error())
+		return
+	}
+	response.OK(c, "all trips fetched", trips)
+}
+
 func (h *Handler) GetTrip(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	tripID, err := uuid.Parse(c.Param("tripId"))

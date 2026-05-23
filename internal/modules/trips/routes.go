@@ -10,6 +10,7 @@ func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
 		trips.POST("/plan-and-create", h.PlanAndCreateTripWithAI)
 		trips.POST("/", h.CreateTrip)
 		trips.GET("/", h.GetMyTrips)
+		trips.GET("/all", h.GetAllTrips)
 		trips.GET("/:tripId", h.GetTrip)
 		trips.PATCH("/:tripId", h.UpdateTrip)
 		trips.DELETE("/:tripId", h.DeleteTrip)

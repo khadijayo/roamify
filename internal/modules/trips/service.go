@@ -24,6 +24,7 @@ type Service interface {
 	CreateTrip(ownerID uuid.UUID, req *CreateTripRequest) (*Trip, error)
 	GetTrip(tripID, requesterID uuid.UUID) (*Trip, error)
 	GetMyTrips(userID uuid.UUID) ([]Trip, error)
+	GetAllTrips() ([]Trip, error)
 	UpdateTrip(tripID, requesterID uuid.UUID, req *UpdateTripRequest) (*Trip, error)
 	DeleteTrip(tripID, requesterID uuid.UUID) error
 
@@ -171,6 +172,10 @@ func (s *service) GetMyTrips(userID uuid.UUID) ([]Trip, error) {
 		}
 	}
 	return merged, nil
+}
+
+func (s *service) GetAllTrips() ([]Trip, error) {
+	return s.repo.FindAllTrips()
 }
 
 func (s *service) UpdateTrip(tripID, requesterID uuid.UUID, req *UpdateTripRequest) (*Trip, error) {
