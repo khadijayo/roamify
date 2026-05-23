@@ -32,8 +32,14 @@ func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
 		trips.PATCH("/:tripId/expenses/:expenseId", h.UpdateExpense)
 		trips.DELETE("/:tripId/expenses/:expenseId", h.DeleteExpense)
 
-		trips.GET("/:tripId/chat", h.GetChatHistory)   // squad chat history
-		trips.POST("/:tripId/chat", h.SendChatMessage) // send chat message
+		// Squad chat — canonical /messages endpoints
+		trips.GET("/:tripId/messages", h.GetChatHistory)
+		trips.POST("/:tripId/messages", h.SendChatMessage)
+
+		// /chat kept for backward compatibility
+		trips.GET("/:tripId/chat", h.GetChatHistory)
+		trips.POST("/:tripId/chat", h.SendChatMessage)
+
 		trips.GET("/:tripId/map", h.GetTripMapPins)
 	}
 }
