@@ -138,13 +138,22 @@ func (s *service) CreateTrip(ownerID uuid.UUID, req *CreateTripRequest) (*Trip, 
 func (s *service) GetTrip(tripID, requesterID uuid.UUID) (*Trip, error) {
 	trip, err := s.repo.FindTripByID(tripID)
 	if err != nil {
-		return nil, err
+		return nil, ErrTripNotFound
 	}
 
-	if trip.OwnerUserID != requesterID && !s.isMember(tripID, requesterID) {
-		return nil, errors.New("access denied")
+	// Owners and joined members always have full access.
+	if trip.OwnerUserID == requesterID || s.isMember(tripID, requesterID) {
+		return trip, nil
 	}
-	return trip, nil
+
+	// Non-members can view planning or ongoing trips so they can see
+	// the trip details before deciding to join (join flow).
+	// Completed and archived trips are private to members only.
+	if trip.Status == TripStatusPlanning || trip.Status == TripStatusOngoing {
+		return trip, nil
+	}
+
+	return nil, errors.New("access denied")
 }
 
 func (s *service) GetMyTrips(userID uuid.UUID) ([]Trip, error) {

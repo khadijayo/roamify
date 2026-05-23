@@ -2,7 +2,6 @@ package trips
 
 import (
 	"errors"
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -147,7 +146,7 @@ func (h *Handler) GetMembers(c *gin.Context) {
 	}
 	members, err := h.svc.GetMembers(tripID)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.NotFound(c, "trip not found or could not fetch members")
 		return
 	}
 	response.OK(c, "members fetched", members)
@@ -413,17 +412,13 @@ func (h *Handler) JoinTrip(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrTripNotFound):
-			response.NotFound(c, err.Error())
+			response.NotFound(c, "trip not found")
 		case errors.Is(err, ErrAlreadyTripMember):
-			response.Conflict(c, err.Error())
+			response.Conflict(c, "you have already joined this trip")
 		default:
 			response.InternalError(c, err.Error())
 		}
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Joined trip successfully",
-		"data":    member,
-	})
+	response.OK(c, "joined trip successfully", member)
 }
