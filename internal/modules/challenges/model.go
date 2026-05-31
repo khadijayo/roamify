@@ -106,5 +106,8 @@ type LeaderboardEntry struct {
 	AvatarURL        *string   `json:"avatar_url"`
 	ExplorerLevel    int       `json:"explorer_level"`
 	RoamifyPoints    int       `json:"roamify_points"`
+	ChallengePoints  int       `json:"challenge_points"`
+	TriviaPoints     int       `json:"trivia_points"`
+	TotalPoints      int       `json:"total_points"`
 	CountriesVisited int       `json:"countries_visited"`
 }

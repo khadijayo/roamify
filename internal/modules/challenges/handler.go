@@ -89,6 +89,16 @@ func (h *Handler) GetLeaderboard(c *gin.Context) {
 	response.OK(c, "leaderboard fetched", rows)
 }
 
+func (h *Handler) GetUserPoints(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
+	rows, err := h.svc.GetUserPoints(limit)
+	if err != nil {
+		response.InternalError(c, err.Error())
+		return
+	}
+	response.OK(c, "user points fetched", rows)
+}
+
 func (h *Handler) ListTrivia(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	rows, err := h.svc.ListTrivia(limit)

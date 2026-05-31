@@ -17,6 +17,7 @@ type Service interface {
 	GetMyProgress(userID uuid.UUID) ([]UserChallengeProgress, error)
 	CreateChallenge(req *CreateChallengeRequest) (*Challenge, error)
 	GetLeaderboard(limit int) ([]LeaderboardEntry, error)
+	GetUserPoints(limit int) ([]LeaderboardEntry, error)
 	ListTrivia(limit int) ([]TriviaQuestion, error)
 	CreateTriviaQuestion(req *CreateTriviaQuestionRequest) (*TriviaQuestion, error)
 	AnswerTrivia(userID uuid.UUID, req *AnswerTriviaRequest) (*TriviaAttempt, error)
@@ -119,26 +120,11 @@ func (s *service) CreateChallenge(req *CreateChallengeRequest) (*Challenge, erro
 }
 
 func (s *service) GetLeaderboard(limit int) ([]LeaderboardEntry, error) {
-	profiles, err := s.userRepo.ListTopVibeProfiles(limit)
-	if err != nil {
-		return nil, err
-	}
-	entries := make([]LeaderboardEntry, 0, len(profiles))
-	for _, vp := range profiles {
-		u, userErr := s.userRepo.FindByID(vp.UserID)
-		if userErr != nil || u == nil {
-			continue
-		}
-		entries = append(entries, LeaderboardEntry{
-			UserID:           u.ID,
-			FullName:         u.FullName,
-			AvatarURL:        u.AvatarURL,
-			ExplorerLevel:    vp.ExplorerLevel,
-			RoamifyPoints:    vp.RoamifyPoints,
-			CountriesVisited: vp.CountriesVisited,
-		})
-	}
-	return entries, nil
+	return s.GetUserPoints(limit)
+}
+
+func (s *service) GetUserPoints(limit int) ([]LeaderboardEntry, error) {
+	return s.repo.GetUserPointTotals(limit)
 }
 
 func (s *service) ListTrivia(limit int) ([]TriviaQuestion, error) {

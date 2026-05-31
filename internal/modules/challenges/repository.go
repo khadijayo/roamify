@@ -20,6 +20,7 @@ type Repository interface {
 	FindActiveTrivia(limit int) ([]TriviaQuestion, error)
 	FindTriviaByID(id uuid.UUID) (*TriviaQuestion, error)
 	CreateTriviaAttempt(a *TriviaAttempt) error
+	GetUserPointTotals(limit int) ([]LeaderboardEntry, error)
 }
 
 type repository struct {
@@ -95,4 +96,46 @@ func (r *repository) FindTriviaByID(id uuid.UUID) (*TriviaQuestion, error) {
 
 func (r *repository) CreateTriviaAttempt(a *TriviaAttempt) error {
 	return r.db.Create(a).Error
+}
+
+func (r *repository) GetUserPointTotals(limit int) ([]LeaderboardEntry, error) {
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	var rows []LeaderboardEntry
+	err := r.db.Table("users AS u").
+		Select(`
+			u.id AS user_id,
+			u.full_name,
+			u.avatar_url,
+			COALESCE(vp.explorer_level, 1) AS explorer_level,
+			COALESCE(vp.countries_visited, 0) AS countries_visited,
+			COALESCE(cp.challenge_points, 0) AS challenge_points,
+			COALESCE(tp.trivia_points, 0) AS trivia_points,
+			COALESCE(cp.challenge_points, 0) + COALESCE(tp.trivia_points, 0) AS total_points,
+			COALESCE(cp.challenge_points, 0) + COALESCE(tp.trivia_points, 0) AS roamify_points
+		`).
+		Joins("LEFT JOIN vibe_profiles vp ON vp.user_id = u.id").
+		Joins(`
+			LEFT JOIN (
+				SELECT user_id, SUM(awarded_points) AS challenge_points
+				FROM user_challenge_progresses
+				WHERE status = ? AND awarded_points > 0
+				GROUP BY user_id
+			) cp ON cp.user_id = u.id
+		`, StatusCompleted).
+		Joins(`
+			LEFT JOIN (
+				SELECT user_id, SUM(awarded_points) AS trivia_points
+				FROM trivia_attempts
+				WHERE is_correct = true AND awarded_points > 0
+				GROUP BY user_id
+			) tp ON tp.user_id = u.id
+		`).
+		Where("u.deleted_at IS NULL").
+		Order("total_points DESC, challenge_points DESC, trivia_points DESC, u.full_name ASC").
+		Limit(limit).
+		Scan(&rows).Error
+	return rows, err
 }

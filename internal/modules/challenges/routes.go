@@ -9,6 +9,7 @@ func RegisterRoutes(r *gin.RouterGroup, h *Handler, auth gin.HandlerFunc) {
 	{
 		ch.GET("/", h.ListChallenges)
 		ch.GET("/leaderboard", h.GetLeaderboard)
+		ch.GET("/points", h.GetUserPoints)
 		ch.POST("/", h.CreateChallenge)
 		ch.POST("/accept", h.AcceptChallenge)
 		ch.POST("/complete", h.CompleteChallenge)

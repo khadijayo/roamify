@@ -71,17 +71,19 @@ type HotelEntry struct {
 func (HotelEntry) TableName() string { return "hotel_entries" }
 
 type Result struct {
-	Users          int
-	Trips          int
-	Posts          int
-	Questions      int
-	Comments       int
-	Challenges     int
-	Participations int
-	Likes          int
-	Flights        int
-	Hotels         int
-	Notifications  int
+	Users           int
+	Trips           int
+	Posts           int
+	Questions       int
+	Comments        int
+	Challenges      int
+	Participations  int
+	TriviaQuestions int
+	TriviaAttempts  int
+	Likes           int
+	Flights         int
+	Hotels          int
+	Notifications   int
 }
 
 type context struct {
@@ -89,6 +91,7 @@ type context struct {
 	trips      []trips.Trip
 	posts      []posts.Post
 	challenges []challenges.Challenge
+	trivia     []challenges.TriviaQuestion
 }
 
 // Run clears previous Roamify demo data and creates a fresh presentation-ready dataset.
@@ -135,7 +138,18 @@ func Run(db *gorm.DB) (*Result, error) {
 		}
 		result.Challenges = len(ctx.challenges)
 
+		ctx.trivia, err = seedTriviaQuestions(tx)
+		if err != nil {
+			return err
+		}
+		result.TriviaQuestions = len(ctx.trivia)
+
 		result.Participations, err = seedChallengeParticipations(tx, ctx.users, ctx.challenges)
+		if err != nil {
+			return err
+		}
+
+		result.TriviaAttempts, err = seedTriviaAttempts(tx, ctx.users, ctx.trivia)
 		if err != nil {
 			return err
 		}
@@ -168,8 +182,8 @@ func Run(db *gorm.DB) (*Result, error) {
 	}
 
 	log.Printf("[seed] success in %s", time.Since(start).Round(time.Millisecond))
-	log.Printf("[seed] inserted users=%d trips=%d posts=%d questions=%d comments=%d challenges=%d participations=%d likes=%d flights=%d hotels=%d notifications=%d",
-		result.Users, result.Trips, result.Posts, result.Questions, result.Comments, result.Challenges, result.Participations, result.Likes, result.Flights, result.Hotels, result.Notifications)
+	log.Printf("[seed] inserted users=%d trips=%d posts=%d questions=%d comments=%d challenges=%d participations=%d trivia_questions=%d trivia_attempts=%d likes=%d flights=%d hotels=%d notifications=%d",
+		result.Users, result.Trips, result.Posts, result.Questions, result.Comments, result.Challenges, result.Participations, result.TriviaQuestions, result.TriviaAttempts, result.Likes, result.Flights, result.Hotels, result.Notifications)
 
 	return result, nil
 }
@@ -258,6 +272,9 @@ func clearSeedData(db *gorm.DB) error {
 		if err := db.Unscoped().Where("user_id IN ?", ids).Delete(&challenges.UserChallengeProgress{}).Error; err != nil {
 			return err
 		}
+		if err := db.Unscoped().Where("user_id IN ?", ids).Delete(&challenges.TriviaAttempt{}).Error; err != nil {
+			return err
+		}
 		if err := db.Unscoped().Where("id IN ?", ids).Delete(&users.User{}).Error; err != nil {
 			return err
 		}
@@ -279,6 +296,18 @@ func clearSeedData(db *gorm.DB) error {
 		}
 	}
 	if err := db.Where("title LIKE ?", "Seed Challenge:%").Delete(&challenges.Challenge{}).Error; err != nil {
+		return err
+	}
+	var seedTriviaIDs []uuid.UUID
+	if err := db.Model(&challenges.TriviaQuestion{}).Where("question LIKE ?", "Seed Trivia:%").Pluck("id", &seedTriviaIDs).Error; err != nil {
+		return err
+	}
+	if len(seedTriviaIDs) > 0 {
+		if err := db.Unscoped().Where("trivia_question_id IN ?", seedTriviaIDs).Delete(&challenges.TriviaAttempt{}).Error; err != nil {
+			return err
+		}
+	}
+	if err := db.Where("question LIKE ?", "Seed Trivia:%").Delete(&challenges.TriviaQuestion{}).Error; err != nil {
 		return err
 	}
 	if err := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&FlightEntry{}).Error; err != nil {
@@ -595,6 +624,106 @@ func seedChallengeParticipations(db *gorm.DB, seedUsers []users.User, seedChalle
 	}
 	log.Printf("[seed] challenge participations inserted: %d", 15)
 	return 15, nil
+}
+
+func seedTriviaQuestions(db *gorm.DB) ([]challenges.TriviaQuestion, error) {
+	type triviaRow struct {
+		question string
+		choices  []string
+		answer   string
+		points   int
+	}
+
+	rows := []triviaRow{
+		{"Which city is served by Narita and Haneda airports?", []string{"Tokyo", "Seoul", "Osaka", "Taipei"}, "Tokyo", 60},
+		{"What document is usually required for international air travel?", []string{"Passport", "Library card", "Gym pass", "Hotel receipt"}, "Passport", 50},
+		{"Which city is famous for the Colosseum?", []string{"Rome", "Paris", "Dubai", "Marrakech"}, "Rome", 50},
+		{"What is the local currency used in Japan?", []string{"Yen", "Euro", "Dollar", "Dirham"}, "Yen", 60},
+		{"Which city is known for La Sagrada Familia?", []string{"Barcelona", "London", "Istanbul", "Bali"}, "Barcelona", 55},
+		{"What should travelers check before a visa appointment?", []string{"Passport validity", "Shoe size", "Playlist length", "Hotel paint color"}, "Passport validity", 70},
+		{"Which city has the Grand Bazaar?", []string{"Istanbul", "New York", "Rome", "Paris"}, "Istanbul", 55},
+		{"What is a common way to save money in expensive cities?", []string{"Use public transport", "Book only taxis", "Avoid maps", "Skip breakfast always"}, "Use public transport", 50},
+		{"Which destination is known for riads and souks?", []string{"Marrakech", "Tokyo", "London", "Dubai"}, "Marrakech", 55},
+		{"What should you pack in carry-on for long flights?", []string{"Essential medication", "Full-size shampoo", "Kitchen knives", "Loose paint"}, "Essential medication", 65},
+		{"Which city is famous for the Eiffel Tower?", []string{"Paris", "Rome", "Barcelona", "Dubai"}, "Paris", 50},
+		{"Which island destination is known for Ubud rice terraces?", []string{"Bali", "Santorini", "Malta", "Ibiza"}, "Bali", 55},
+		{"Which city has boroughs including Brooklyn and Manhattan?", []string{"New York", "London", "Paris", "Tokyo"}, "New York", 50},
+		{"What is the safest habit when arriving late?", []string{"Use verified transport", "Accept random rides", "Keep phone dead", "Ignore address"}, "Use verified transport", 70},
+		{"Which city is known for the Burj Khalifa?", []string{"Dubai", "Istanbul", "Rome", "Marrakech"}, "Dubai", 50},
+		{"What helps avoid roaming charges?", []string{"eSIM or local SIM", "Airplane mode forever", "More photos", "Paper tickets only"}, "eSIM or local SIM", 55},
+		{"Which city is associated with Big Ben?", []string{"London", "Paris", "Rome", "Tokyo"}, "London", 50},
+		{"What is a smart hostel safety habit?", []string{"Use a locker", "Leave passport on bed", "Share PINs", "Ignore reviews"}, "Use a locker", 60},
+		{"Which food is strongly associated with Rome?", []string{"Carbonara", "Sushi", "Couscous", "Tacos"}, "Carbonara", 45},
+		{"What should budget travelers compare before booking?", []string{"Total price with fees", "Logo color", "Lobby music", "Elevator brand"}, "Total price with fees", 60},
+		{"Which transport pass is useful for many city trips?", []string{"Metro card", "Cinema ticket", "Gym card", "Concert wristband"}, "Metro card", 45},
+		{"What is a good first step in a new city?", []string{"Save offline maps", "Delete itinerary", "Lose charger", "Skip check-in"}, "Save offline maps", 50},
+		{"Which city sits on two continents?", []string{"Istanbul", "Paris", "New York", "Rome"}, "Istanbul", 65},
+		{"What is useful for proof of accommodation?", []string{"Booking confirmation", "Restaurant photo", "Old receipt", "Boarding music"}, "Booking confirmation", 50},
+		{"Which city is famous for tapas and Gaudi architecture?", []string{"Barcelona", "Tokyo", "Dubai", "London"}, "Barcelona", 55},
+		{"What reduces missed-flight risk?", []string{"Arrive early", "Ignore gate changes", "Pack late", "Use no alarms"}, "Arrive early", 55},
+		{"Which country is Marrakech in?", []string{"Morocco", "Turkey", "Italy", "Indonesia"}, "Morocco", 45},
+		{"What helps with food allergies abroad?", []string{"Translated allergy card", "Guessing ingredients", "Eating anything", "No water"}, "Translated allergy card", 70},
+		{"Which city is known for Shibuya Crossing?", []string{"Tokyo", "Seoul", "Bangkok", "Osaka"}, "Tokyo", 50},
+		{"What should you check before booking budget flights?", []string{"Baggage rules", "Pilot's favorite color", "Seat fabric", "Airport playlist"}, "Baggage rules", 60},
+	}
+
+	created := make([]challenges.TriviaQuestion, 0, len(rows))
+	now := time.Now()
+	for i, row := range rows {
+		q := challenges.TriviaQuestion{
+			ID:            uuid.New(),
+			Question:      "Seed Trivia: " + row.question,
+			Choices:       pq.StringArray(row.choices),
+			CorrectAnswer: row.answer,
+			Points:        row.points,
+			IsActive:      true,
+			CreatedAt:     now.AddDate(0, 0, -i),
+			UpdatedAt:     now,
+		}
+		if err := db.Create(&q).Error; err != nil {
+			return nil, err
+		}
+		created = append(created, q)
+	}
+	log.Printf("[seed] trivia questions inserted: %d", len(created))
+	return created, nil
+}
+
+func seedTriviaAttempts(db *gorm.DB, seedUsers []users.User, seedTrivia []challenges.TriviaQuestion) (int, error) {
+	if len(seedUsers) == 0 || len(seedTrivia) == 0 {
+		return 0, nil
+	}
+
+	for i := 0; i < 30; i++ {
+		q := seedTrivia[i%len(seedTrivia)]
+		correct := i%4 != 0
+		selected := q.CorrectAnswer
+		if !correct && len(q.Choices) > 1 {
+			selected = q.Choices[(i+1)%len(q.Choices)]
+			if selected == q.CorrectAnswer {
+				selected = q.Choices[(i+2)%len(q.Choices)]
+			}
+		}
+
+		awarded := 0
+		if correct {
+			awarded = q.Points
+		}
+		attempt := challenges.TriviaAttempt{
+			ID:               uuid.New(),
+			UserID:           seedUsers[(i*2)%len(seedUsers)].ID,
+			TriviaQuestionID: q.ID,
+			SelectedAnswer:   selected,
+			IsCorrect:        correct,
+			AwardedPoints:    awarded,
+			CreatedAt:        time.Now().AddDate(0, 0, -i),
+		}
+		if err := db.Create(&attempt).Error; err != nil {
+			return i, err
+		}
+	}
+	log.Printf("[seed] trivia attempts inserted: %d", 30)
+	return 30, nil
 }
 
 func seedFlights(db *gorm.DB) (int, error) {
