@@ -1671,6 +1671,7 @@
     "/api/v1/challenges/leaderboard": {
       "get": {
         "summary": "Get leaderboard",
+        "description": "Returns users ordered by points collected from completed challenges and correct trivia answers.",
         "parameters": [
           {
             "$ref": "#/components/parameters/limit"
@@ -1678,7 +1679,37 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaderboardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/challenges/points": {
+      "get": {
+        "summary": "Get user points",
+        "description": "Returns each user's challenge points, trivia points, and combined total for leaderboard displays.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaderboardResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -3513,6 +3544,58 @@
           "challenge_id": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "LeaderboardEntry": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "avatar_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "explorer_level": {
+            "type": "integer"
+          },
+          "roamify_points": {
+            "type": "integer",
+            "description": "Compatibility field equal to total_points for the computed leaderboard."
+          },
+          "challenge_points": {
+            "type": "integer"
+          },
+          "trivia_points": {
+            "type": "integer"
+          },
+          "total_points": {
+            "type": "integer"
+          },
+          "countries_visited": {
+            "type": "integer"
+          }
+        }
+      },
+      "LeaderboardResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LeaderboardEntry"
+            }
           }
         }
       },
