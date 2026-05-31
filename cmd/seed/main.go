@@ -1,78 +1,33 @@
-// cmd/seed/main.go
-//
-// Roamify database seeder
+// Roamify database seeder.
 //
 // Usage:
 //
 //	go run cmd/seed/main.go
 //
-// Environment variables (same as the main app):
-//
-//	DATABASE_URL   – full Postgres DSN (takes precedence)
-//	DB_HOST / DB_PORT / DB_USER / DB_PASSWORD / DB_NAME / DB_SSLMODE – individual params
-//	APP_ENV        – set to "development" for verbose GORM logging
-//
-// The seeder is fully idempotent. Running it multiple times is safe.
+// The command uses the same database environment variables as the API. It runs
+// AutoMigrate for the normal app schema plus the seed-only presentation tables,
+// clears previous @roamify.demo records, and inserts a fresh demo dataset.
 package main
 
 import (
 	"log"
-	"os"
+	"time"
 
 	"github.com/khadijayo/roamify/config"
 	"github.com/khadijayo/roamify/internal/seed"
 )
 
 func main() {
-	// ── Bootstrap ──────────────────────────────────────────────────────────────
-	if err := bootstrap(); err != nil {
-		log.Fatalf("[seed] bootstrap failed: %v", err)
-	}
-
-	db := config.DB
-	log.Println("[seed] 🌱 starting Roamify database seeder…")
-
-	// ── 1. Users ───────────────────────────────────────────────────────────────
-	seededUsers, err := seed.SeedUsers(db)
-	if err != nil {
-		log.Fatalf("[seed] SeedUsers: %v", err)
-	}
-
-	// ── 2. Trips ───────────────────────────────────────────────────────────────
-	seededTrips, err := seed.SeedTrips(db, seededUsers)
-	if err != nil {
-		log.Fatalf("[seed] SeedTrips: %v", err)
-	}
-
-	// ── 3. Squads ──────────────────────────────────────────────────────────────
-	if err := seed.SeedSquads(db, seededUsers, seededTrips); err != nil {
-		log.Printf("[seed] SeedSquads (non-fatal): %v", err)
-	}
-
-	// ── 4. Comments ────────────────────────────────────────────────────────────
-	if err := seed.SeedComments(db, seededUsers, seededTrips); err != nil {
-		log.Printf("[seed] SeedComments (non-fatal): %v", err)
-	}
-
-	// ── 5. Likes ───────────────────────────────────────────────────────────────
-	if err := seed.SeedLikes(db, seededUsers, seededTrips); err != nil {
-		log.Printf("[seed] SeedLikes (non-fatal): %v", err)
-	}
-
-	log.Println("[seed] ✅ all done – Roamify is ready for demo!")
-}
-
-// bootstrap loads config and opens the database connection.
-// It deliberately does NOT run migrations – run the main app once first.
-func bootstrap() error {
-	// Allow overriding the env file path for CI / Docker environments
-	if envFile := os.Getenv("ENV_FILE"); envFile != "" {
-		if err := os.Setenv("GODOTENV_PATH", envFile); err != nil {
-			return err
-		}
-	}
+	start := time.Now()
 
 	config.Load()
 	config.ConnectDB()
-	return nil
+	config.AutoMigrate()
+
+	log.Println("[seed] starting Roamify presentation seed")
+	if _, err := seed.Run(config.DB); err != nil {
+		log.Fatalf("[seed] failed after %s: %v", time.Since(start).Round(time.Millisecond), err)
+	}
+	log.Printf("[seed] completed in %s", time.Since(start).Round(time.Millisecond))
+	log.Printf("[seed] demo users all use password %q", "Roamify2026!")
 }

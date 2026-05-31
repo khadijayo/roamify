@@ -156,7 +156,21 @@ On first startup GORM automatically creates all database tables. You'll see:
 go run cmd/seed/main.go
 ```
 
-Seeds 8 users, 15 trips, 4 squads, 25 comments, and 40 likes. Fully idempotent — safe to run multiple times.
+Seeds a complete presentation dataset: 20 users, 40 trips, 20 travel posts, 40 travel questions, 30 post comments, 50 challenges, 15 challenge participations, 30 likes/reactions, 40 flights, 40 hotels, and 40 notifications.
+
+The seeder uses the existing app models where they exist. Because Roamify does not currently have persistent models for travel questions, flights, or hotels, the seeder also creates `travel_questions`, `flight_entries`, and `hotel_entries` as seed-owned presentation tables.
+
+All demo users use the password `Roamify2026!` and emails ending in `@roamify.demo`.
+
+To reseed, run the same command again. It clears previous `@roamify.demo` records and seed-owned flight/hotel/question data first, then inserts a fresh dataset. Existing non-demo users are left alone.
+
+To run migrations only, start the API once:
+
+```bash
+go run cmd/main.go
+```
+
+The seed command also calls `AutoMigrate` before inserting data, so it can prepare the database directly for a final demo.
 
 ---
 
