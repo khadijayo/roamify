@@ -185,7 +185,9 @@ func (s *service) Register(ctx context.Context, req *RegisterRequest) (*Register
 	}
 
 	if existing != nil {
-		if existing.IsVerified {
+		// Allow password setup for social auth accounts (verified, but no password)
+		// or for unverified accounts during re-registration
+		if existing.IsVerified && existing.PasswordHash != nil {
 			return nil, ErrEmailAlreadyRegistered
 		}
 
@@ -195,7 +197,10 @@ func (s *service) Register(ctx context.Context, req *RegisterRequest) (*Register
 		existing.VerificationToken = &hashedToken
 		existing.TokenExpiresAt = &expiresAt
 		existing.VerificationSentAt = ptrTime(time.Now().UTC())
-		existing.IsVerified = false
+		// Only reset IsVerified to false for unverified accounts; keep verified accounts verified
+		if !existing.IsVerified {
+			existing.IsVerified = false
+		}
 		existing.IsBanned = false
 		existing.Role = users.RoleUser
 
